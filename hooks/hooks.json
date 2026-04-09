@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const p=require('path'); const f=JSON.parse(require('fs').readFileSync('/dev/stdin','utf8')).tool_input?.file_path||''; if(f.endsWith('.test.ts')) process.stdout.write('[GuardX] Test file updated — run /guardx:test-review to trigger adversarial evaluation\\n');\""
+          }
+        ]
+      }
+    ]
+  }
+}

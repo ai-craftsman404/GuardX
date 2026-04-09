@@ -1,0 +1,6 @@
+{
+  "name": "guardx",
+  "description": "LLM security scanner powered by ZeroLeaks — test system prompts for prompt injection and extraction vulnerabilities",
+  "version": "1.0.0",
+  "author": { "name": "GuardX" }
+}

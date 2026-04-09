@@ -1,0 +1,7 @@
+.env
+.claude/
+node_modules/
+dist/
+mcp-server/.guardx/
+*.js.map
+coverage/

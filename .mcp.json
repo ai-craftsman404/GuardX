@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "guardx": {
+      "command": "npx",
+      "args": ["tsx", "mcp-server/src/server.ts"],
+      "env": {
+        "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}"
+      }
+    }
+  }
+}
