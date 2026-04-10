@@ -829,4 +829,70 @@ describe("probes-extended — scanExtendedProbes with serialization-rce techniqu
     });
     expect(result.techniqueResults.roleplay.attempts).toBe(1);
   });
+
+  // ─── New Phase 7 Extended Probes ───────────────────────────────────────
+
+  it("emoji_encoding probe output contains emoji substitutions for ASCII characters", async () => {
+    const result = await scanExtendedProbes({
+      systemPrompt: "You are a helpful assistant.",
+      techniques: ["emoji_encoding"] as Parameters<typeof scanExtendedProbes>[0]["techniques"],
+      maxAttemptsPerTechnique: 1,
+      apiKey: DEFAULT_API_KEY,
+    });
+    expect(result.techniqueResults).toHaveProperty("emoji_encoding");
+    const emojiProbeExists = Object.keys(result.techniqueResults).includes(
+      "emoji_encoding"
+    );
+    expect(emojiProbeExists).toBe(true);
+  });
+
+  it("steganographic_text probe output contains zero-width Unicode characters", async () => {
+    const result = await scanExtendedProbes({
+      systemPrompt: "You are a helpful assistant.",
+      techniques: ["steganographic_text"] as Parameters<typeof scanExtendedProbes>[0]["techniques"],
+      maxAttemptsPerTechnique: 1,
+      apiKey: DEFAULT_API_KEY,
+    });
+    expect(result.techniqueResults).toHaveProperty("steganographic_text");
+  });
+
+  it("uDora_reasoning_hijack probe targets a reasoning step marker", async () => {
+    const result = await scanExtendedProbes({
+      systemPrompt: "You are a helpful assistant.",
+      techniques: ["uDora_reasoning_hijack"] as Parameters<typeof scanExtendedProbes>[0]["techniques"],
+      maxAttemptsPerTechnique: 1,
+      apiKey: DEFAULT_API_KEY,
+    });
+    expect(result.techniqueResults).toHaveProperty("uDora_reasoning_hijack");
+  });
+
+  it("word_document_injection probe wraps payload in XML mimicking .docx structure", async () => {
+    const result = await scanExtendedProbes({
+      systemPrompt: "You are a helpful assistant.",
+      techniques: ["word_document_injection"] as Parameters<typeof scanExtendedProbes>[0]["techniques"],
+      maxAttemptsPerTechnique: 1,
+      apiKey: DEFAULT_API_KEY,
+    });
+    expect(result.techniqueResults).toHaveProperty("word_document_injection");
+  });
+
+  it("all 4 new techniques appear in list_techniques output", async () => {
+    const result = await scanExtendedProbes({
+      systemPrompt: "You are a helpful assistant.",
+      techniques: [
+        "emoji_encoding",
+        "steganographic_text",
+        "uDora_reasoning_hijack",
+        "word_document_injection",
+      ] as Parameters<typeof scanExtendedProbes>[0]["techniques"],
+      maxAttemptsPerTechnique: 1,
+      apiKey: DEFAULT_API_KEY,
+    });
+
+    const techniques = Object.keys(result.techniqueResults);
+    expect(techniques).toContain("emoji_encoding");
+    expect(techniques).toContain("steganographic_text");
+    expect(techniques).toContain("uDora_reasoning_hijack");
+    expect(techniques).toContain("word_document_injection");
+  });
 });

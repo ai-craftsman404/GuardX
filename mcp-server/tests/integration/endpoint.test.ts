@@ -1,25 +1,27 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
 import { createServer, IncomingMessage, ServerResponse, Server } from "http";
 
-// Mock zeroleaks so we don't need real API keys
+// Mock scanner and probes so we don't need real API keys
 const mockRunSecurityScan = vi.fn();
 const mockGetAllProbes = vi.fn();
-vi.mock("zeroleaks", () => ({
+vi.mock("../../src/scanner.js", () => ({
   runSecurityScan: mockRunSecurityScan,
+}));
+vi.mock("../../src/probes.js", () => ({
   getAllProbes: mockGetAllProbes,
   getProbesByCategory: vi.fn(),
-  allDocumentedTechniques: [],
+  DOCUMENTED_TECHNIQUES: {},
 }));
 
 const MOCK_SCAN_RESULT = {
   findings: [],
-  overallVulnerability: "secure",
-  leakStatus: "none",
+  vulnerability: "secure" as const,
+  leakStatus: "none" as const,
   recommendations: [],
-  defenseProfile: {},
-  turnsUsed: 3,
-  tokensUsed: 300,
-  duration: 1000,
+  defenseProfiles: [],
+  totalTokens: 300,
+  scanId: "scan-123",
+  timestamp: new Date().toISOString(),
 };
 
 const MOCK_PROBES = [

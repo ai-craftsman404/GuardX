@@ -20,8 +20,8 @@ describe("phase6 — all 3 new tools registered in server", () => {
     expect(toolMap.has("scan_supply_chain")).toBe(true);
   });
 
-  it("total tool count is 25", () => {
-    expect(TOOL_DEFINITIONS).toHaveLength(25);
+  it("total tool count is 27", () => {
+    expect(TOOL_DEFINITIONS).toHaveLength(27);
   });
 });
 

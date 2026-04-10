@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync, existsSync, readdirSync } from "fs";
 import { join, basename } from "path";
-import { runSecurityScan } from "zeroleaks";
+import { runSecurityScan } from "./scanner.js";
 import {
   ScheduledScan,
   computeNextRunAt,

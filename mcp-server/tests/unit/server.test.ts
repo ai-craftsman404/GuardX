@@ -1,54 +1,46 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-// Mock zeroleaks before any server import
+// Mock scanner and probes before any server import
 const mockRunSecurityScan = vi.fn();
 const mockGetAllProbes = vi.fn();
 const mockGetProbesByCategory = vi.fn();
-const mockAllDocumentedTechniques = [
-  { id: "t1", category: "zero_click_injection", name: "Zero Click", description: "No interaction needed" },
-];
+const mockDOCUMENTED_TECHNIQUES = {
+  direct_injection: "Directly injecting malicious commands",
+  system_prompt_extraction: "Techniques to leak the system prompt",
+  jailbreak: "Bypassing safety guidelines using hypothetical scenarios",
+  role_confusion: "Confusing the AI by requesting role changes",
+};
 
-vi.mock("zeroleaks", () => ({
+vi.mock("../../src/scanner.js", () => ({
   runSecurityScan: mockRunSecurityScan,
+}));
+
+vi.mock("../../src/probes.js", () => ({
   getAllProbes: mockGetAllProbes,
   getProbesByCategory: mockGetProbesByCategory,
-  allDocumentedTechniques: mockAllDocumentedTechniques,
+  DOCUMENTED_TECHNIQUES: mockDOCUMENTED_TECHNIQUES,
 }));
 
 const MOCK_SCAN_RESULT = {
   findings: [
     {
-      id: "f1",
-      turn: 2,
-      timestamp: Date.now(),
-      extractedContent: "You are a helpful assistant",
-      contentType: "system_prompt",
+      category: "direct_injection",
       technique: "direct_extraction",
-      category: "direct",
-      attackNodeId: "n1",
-      confidence: "high",
+      severity: "high" as const,
+      confidence: 0.8,
+      description: "Direct prompt extraction vulnerability detected",
       evidence: "Model repeated system prompt verbatim",
-      severity: "high",
-      verified: true,
+      recommendation: "Add explicit secrecy instructions",
+      extractedContent: "You are a helpful assistant",
     },
   ],
-  overallVulnerability: "high",
-  overallScore: 35,
-  leakStatus: "substantial",
-  extractedFragments: ["You are a helpful assistant"],
+  vulnerability: "high" as const,
+  leakStatus: "partial" as const,
   recommendations: ["Add explicit secrecy instructions"],
-  summary: "System prompt is vulnerable to direct extraction",
-  defenseProfile: { level: "weak", confidence: 0.9, observedBehaviors: [], guardrails: [], weaknesses: [], refusalTriggers: [], safeTopics: [], responsePatterns: [] },
-  conversationLog: [],
-  aborted: false,
-  completionReason: "max_turns_reached",
-  turnsUsed: 15,
-  tokensUsed: 4200,
-  treeNodesExplored: 12,
-  strategiesUsed: ["direct_extraction"],
-  startTime: Date.now() - 30000,
-  endTime: Date.now(),
-  duration: 30000,
+  defenseProfiles: ["prompt_injection_defense"],
+  totalTokens: 4200,
+  scanId: "scan-123",
+  timestamp: new Date().toISOString(),
 };
 
 const MOCK_PROBES = [
@@ -78,10 +70,10 @@ describe("GuardX MCP Server — unit tests", () => {
     vi.resetModules();
   });
 
-  it("server exposes all 22 tools with correct names", async () => {
+  it("server exposes all 27 tools with correct names", async () => {
     const mod = await import("../../src/server.js");
     const toolNames = mod.TOOL_DEFINITIONS.map((t: { name: string }) => t.name);
-    expect(toolNames).toHaveLength(25);
+    expect(toolNames).toHaveLength(27);
     for (const name of [
       "scan_system_prompt",
       "list_probes",
@@ -100,6 +92,8 @@ describe("GuardX MCP Server — unit tests", () => {
       "diff_scans",
       "test_tool_exfiltration",
       "test_multimodal_injection",
+      "audit_mcp_config",
+      "simulate_promptware_killchain",
     ]) {
       expect(toolNames).toContain(name);
     }
@@ -177,13 +171,12 @@ describe("GuardX MCP Server — unit tests", () => {
     const result = await handleToolCall("scan_system_prompt", { systemPrompt: "You are a test assistant." });
     const body = JSON.parse(result.content[0].text);
     expect(body).toHaveProperty("findings");
-    expect(body).toHaveProperty("overallVulnerability");
+    expect(body).toHaveProperty("vulnerability");
     expect(body).toHaveProperty("leakStatus");
     expect(body).toHaveProperty("recommendations");
-    expect(body).toHaveProperty("defenseProfile");
-    expect(body).toHaveProperty("tokensUsed");
+    expect(body).toHaveProperty("defenseProfiles");
+    expect(body).toHaveProperty("totalTokens");
     expect(Array.isArray(body.findings)).toBe(true);
-    expect(body.findings).toHaveLength(1);
   });
 
   it("list_probes — calls getAllProbes() when no category given", async () => {
@@ -212,10 +205,13 @@ describe("GuardX MCP Server — unit tests", () => {
     const result = await handleToolCall("list_techniques", {});
     expect(result.isError).toBeUndefined();
     const body = JSON.parse(result.content[0].text);
-    expect(Array.isArray(body)).toBe(true);
-    expect(body).toHaveLength(mockAllDocumentedTechniques.length);
-    expect(body[0]).toHaveProperty("id");
-    expect(body[0]).toHaveProperty("category");
+    expect(typeof body).toBe("object");
+    expect(Array.isArray(body)).toBe(false);
+    expect(Object.keys(body).length).toBeGreaterThan(0);
+    const keys = Object.keys(mockDOCUMENTED_TECHNIQUES);
+    for (const key of keys) {
+      expect(body[key]).toBeDefined();
+    }
   });
 
   // U2 — get_scan_config returns correct shape

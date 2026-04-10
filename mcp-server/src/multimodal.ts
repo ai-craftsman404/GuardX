@@ -227,7 +227,7 @@ export async function testMultimodalInjection(
     throw new Error("OPENROUTER_API_KEY not set — cannot run multimodal injection test.");
   }
 
-  const { runSecurityScan } = await import("zeroleaks");
+  const { runSecurityScan } = await import("./scanner.js");
 
   const findings: MultiModalFinding[] = [];
 

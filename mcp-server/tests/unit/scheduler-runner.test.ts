@@ -7,7 +7,7 @@ import { randomBytes } from "crypto";
 // ── Mocks ────────────────────────────────────────────────────────────────────
 
 const mockRunSecurityScan = vi.fn();
-vi.mock("zeroleaks", () => ({
+vi.mock("../../src/scanner.js", () => ({
   runSecurityScan: mockRunSecurityScan,
 }));
 

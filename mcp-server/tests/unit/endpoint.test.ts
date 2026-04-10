@@ -2,11 +2,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 const mockRunSecurityScan = vi.fn();
 const mockGetAllProbes = vi.fn();
-vi.mock("zeroleaks", () => ({
+vi.mock("../../src/scanner.js", () => ({
   runSecurityScan: mockRunSecurityScan,
+}));
+
+vi.mock("../../src/probes.js", () => ({
   getAllProbes: mockGetAllProbes,
   getProbesByCategory: vi.fn(),
-  allDocumentedTechniques: [],
+  DOCUMENTED_TECHNIQUES: {},
 }));
 
 const MOCK_SCAN_RESULT = {

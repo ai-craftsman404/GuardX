@@ -1,4 +1,5 @@
-import { getAllProbes, runSecurityScan } from "zeroleaks";
+import { runSecurityScan } from "./scanner.js";
+import { getAllProbes } from "./probes.js";
 
 export interface EndpointConfig {
   url: string;

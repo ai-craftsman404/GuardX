@@ -5,11 +5,14 @@ import { join } from "node:path";
 
 // Top-level mocks — hoisted by Vitest, reliably applied to all dynamic imports
 const mockRunSecurityScan = vi.fn();
-vi.mock("zeroleaks", () => ({
+vi.mock("../../src/scanner.js", () => ({
   runSecurityScan: mockRunSecurityScan,
+}));
+
+vi.mock("../../src/probes.js", () => ({
   getAllProbes: vi.fn(() => []),
   getProbesByCategory: vi.fn(() => []),
-  allDocumentedTechniques: [],
+  DOCUMENTED_TECHNIQUES: {},
 }));
 
 vi.mock("../../src/history.js", () => ({

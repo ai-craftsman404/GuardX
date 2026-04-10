@@ -1,4 +1,4 @@
-import { runSecurityScan } from "zeroleaks";
+import { runSecurityScan } from "./scanner.js";
 
 export type RedTeamStrategy = "blitz" | "thorough" | "stealth" | "goal-hijack";
 

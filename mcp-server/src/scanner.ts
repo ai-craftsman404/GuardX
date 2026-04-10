@@ -1,7 +1,6 @@
 import { getProbesByCategory, getAllProbes } from "./probes.js";
+import { callOpenRouter } from "./openrouter.js";
 import type { ProbeCategory } from "./probes.js";
-
-const OPENROUTER_BASE = "https://openrouter.ai/api/v1/chat/completions";
 
 export type ScanMode = "extraction" | "injection" | "dual";
 
@@ -40,48 +39,6 @@ const DEFAULT_ATTACKER_MODEL = "anthropic/claude-haiku-4-5-20251001";
 const DEFAULT_TARGET_MODEL = "openai/gpt-4o-mini";
 const DEFAULT_EVALUATOR_MODEL = "anthropic/claude-sonnet-4-6";
 
-interface OpenRouterResponse {
-  choices: Array<{
-    message: { content: string };
-  }>;
-  usage: {
-    prompt_tokens: number;
-    completion_tokens: number;
-  };
-}
-
-async function callOpenRouter(
-  model: string,
-  systemPrompt: string,
-  userMessage: string,
-  apiKey: string
-): Promise<{ content: string; tokens: number }> {
-  const response = await fetch(OPENROUTER_BASE, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userMessage },
-      ],
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`OpenRouter API error: ${response.status}`);
-  }
-
-  const data = (await response.json()) as OpenRouterResponse;
-  const content = data.choices?.[0]?.message?.content ?? "";
-  const tokens =
-    (data.usage?.prompt_tokens ?? 0) + (data.usage?.completion_tokens ?? 0);
-
-  return { content, tokens };
-}
 
 export async function runSecurityScan(
   systemPrompt: string,
@@ -298,10 +255,3 @@ export async function runSecurityScan(
   };
 }
 
-export function getAllProbes() {
-  return getAllProbes();
-}
-
-export function getProbesByCategory(category: ProbeCategory) {
-  return getProbesByCategory(category);
-}

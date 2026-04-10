@@ -1,6 +1,6 @@
 # GuardX
 
-LLM security scanner as a Claude Code plugin — powered by [ZeroLeaks](https://github.com/ZeroLeaks/zeroleaks).
+LLM security scanner as a Claude Code plugin with native scanning engine.
 
 Scan AI system prompts for prompt injection and extraction vulnerabilities directly from Claude Code. Get structured findings with severity ratings, defense fingerprints, and remediation advice, all interpreted inline.
 
@@ -104,7 +104,7 @@ GuardX/
 │   ├── src/server.ts              # MCP server — 4 tools
 │   ├── tests/
 │   │   ├── fixtures/              # AutoGPT system prompt fixtures
-│   │   ├── unit/                  # Unit tests (mocked zeroleaks)
+│   │   ├── unit/                  # Unit tests (mocked native scanner)
 │   │   └── integration/           # Integration tests (real OpenRouter)
 │   ├── package.json
 │   └── tsconfig.json

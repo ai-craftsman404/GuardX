@@ -16,7 +16,7 @@ Read, Write, Bash (run tests), Glob, Grep
 ## Responsibilities
 - Write Vitest unit tests following strict TDD conventions
 - Cover happy path, edge cases, boundary conditions, and all error paths
-- Mock `zeroleaks` correctly — matching real API contracts (correct function names,
+- Mock GuardX scanner modules correctly — matching real API contracts (correct function names,
   return shape, parameter order)
 - For new modules using `fetch` directly, stub the global with `vi.stubGlobal`
 - Write tests BEFORE implementation files (strict TDD order)
@@ -25,7 +25,7 @@ Read, Write, Bash (run tests), Glob, Grep
 ## Behaviour Rules
 
 1. Always write tests BEFORE implementation files
-2. Always mock `zeroleaks` at module level (`vi.mock('zeroleaks', ...)`) not inside
+2. Always mock GuardX scanner modules at module level (`vi.mock('../src/scanner', ...)`) not inside
    individual tests
 3. Always test ALL enum values for every enum parameter
 4. Always include at least one test for each missing required parameter
@@ -44,8 +44,8 @@ Read, Write, Bash (run tests), Glob, Grep
 
 ## Mock Contract Verification
 Before writing any `vi.mock(...)` call, verify the real module exports match:
-- `zeroleaks`: exports `runSecurityScan`, `getAllProbes`, `getProbesByCategory`,
-  `allDocumentedTechniques`
+- `../src/scanner`: exports `scanSystemPrompt`, `ScanOptions`, `ScanResult`, `ScanFinding`
+- `../src/probes`: exports `getProbesByCategory`, `getAllProbes`
 - `node-cron` or `cron-parser`: check actual API before mocking
 - `pdfkit`: constructor returns a document object with `.end()`, `.pipe()`, events
 

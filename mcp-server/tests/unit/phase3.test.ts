@@ -1,14 +1,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-// Mock zeroleaks
+// Mock scanner and probes
 const mockRunSecurityScan = vi.fn();
 const mockGetAllProbes = vi.fn();
 const mockGetProbesByCategory = vi.fn();
-vi.mock("zeroleaks", () => ({
+vi.mock("../../src/scanner.js", () => ({
   runSecurityScan: mockRunSecurityScan,
+}));
+vi.mock("../../src/probes.js", () => ({
   getAllProbes: mockGetAllProbes,
   getProbesByCategory: mockGetProbesByCategory,
-  allDocumentedTechniques: [],
+  DOCUMENTED_TECHNIQUES: {},
 }));
 
 // Mock history module

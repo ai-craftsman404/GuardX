@@ -163,7 +163,7 @@ export async function testToolExfiltration(
     throw new Error("OPENROUTER_API_KEY not set — cannot run tool exfiltration test.");
   }
 
-  const { runSecurityScan } = await import("zeroleaks");
+  const { runSecurityScan } = await import("./scanner.js");
 
   const exfiltrationAttempts: ToolCallAttempt[] = [];
 

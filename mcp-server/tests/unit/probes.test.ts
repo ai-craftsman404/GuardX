@@ -6,7 +6,7 @@ import {
   DOCUMENTED_TECHNIQUES,
   type Probe,
   type ProbeCategory,
-} from "../src/probes.js";
+} from "../../src/probes.js";
 
 describe("Probes Catalog", () => {
   it("ALL_PROBES is a non-empty array", () => {

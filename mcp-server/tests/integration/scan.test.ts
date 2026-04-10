@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { runSecurityScan } from "zeroleaks";
+import { runSecurityScan } from "../../src/scanner.js";
 import {
   EVALUATION_PROMPT_REFERENCE,
   COPILOT_PROMPT,

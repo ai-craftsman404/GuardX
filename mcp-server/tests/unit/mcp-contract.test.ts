@@ -5,18 +5,16 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 const mockRunSecurityScan = vi.fn();
 const mockGetAllProbes = vi.fn();
 const mockGetProbesByCategory = vi.fn();
-vi.mock("zeroleaks", () => ({
+vi.mock("../../src/scanner.js", () => ({
   runSecurityScan: mockRunSecurityScan,
+}));
+
+vi.mock("../../src/probes.js", () => ({
   getAllProbes: mockGetAllProbes,
   getProbesByCategory: mockGetProbesByCategory,
-  allDocumentedTechniques: [
-    {
-      id: "t1",
-      category: "direct",
-      name: "Test",
-      description: "Test technique",
-    },
-  ],
+  DOCUMENTED_TECHNIQUES: {
+    direct: "Test technique",
+  },
 }));
 
 vi.mock("../../src/history.js", () => ({
@@ -134,9 +132,9 @@ afterEach(async () => {
 });
 
 describe("MCP protocol contract", () => {
-  it("listTools returns exactly 25 tools", async () => {
+  it("listTools returns exactly 27 tools", async () => {
     const result = await client.listTools();
-    expect(result.tools.length).toBe(25);
+    expect(result.tools.length).toBe(27);
   });
 
   it("listTools — every tool has name, description, and inputSchema", async () => {

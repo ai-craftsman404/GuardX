@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { runSecurityScan } from "zeroleaks";
+import { runSecurityScan } from "../../src/scanner.js";
 import { enrichFindings } from "../../src/compliance.js";
 import { EVALUATION_PROMPT_REFERENCE } from "../fixtures/autogpt-prompts.js";
 
@@ -88,7 +88,7 @@ describeIntegration(
         }
 
         // Warn (but don't fail) for known categories using fallback — signals
-        // that compliance.ts ATLAS_MAP needs updating for new zeroleaks techniques.
+        // that compliance.ts ATLAS_MAP needs updating for new attack techniques.
         if (fallbackCategories.length > 0) {
           console.warn(
             `[compliance] These known categories only produced a single ATLAS tag ` +

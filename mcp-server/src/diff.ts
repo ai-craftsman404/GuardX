@@ -121,7 +121,7 @@ export async function diffScans(input: DiffScansInput): Promise<DiffResult> {
     }
     current = c;
   } else if (input.systemPrompt) {
-    const { runSecurityScan } = await import("zeroleaks");
+    const { runSecurityScan } = await import("./scanner.js");
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
       throw new Error(

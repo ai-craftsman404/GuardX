@@ -1,23 +1,21 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-// Mock zeroleaks before any server import
+// Mock scanner and probes before any server import
 const mockRunSecurityScan = vi.fn();
 const mockGetAllProbes = vi.fn();
 const mockGetProbesByCategory = vi.fn();
-const mockAllDocumentedTechniques = [
-  {
-    name: "direct",
-    description: "Direct prompt extraction",
-    category: "direct",
-    successRate: 0.8,
-  },
-];
+const mockDOCUMENTED_TECHNIQUES = {
+  direct: "Direct prompt extraction",
+};
 
-vi.mock("zeroleaks", () => ({
+vi.mock("../../src/scanner.js", () => ({
   runSecurityScan: mockRunSecurityScan,
+}));
+
+vi.mock("../../src/probes.js", () => ({
   getAllProbes: mockGetAllProbes,
   getProbesByCategory: mockGetProbesByCategory,
-  allDocumentedTechniques: mockAllDocumentedTechniques,
+  DOCUMENTED_TECHNIQUES: mockDOCUMENTED_TECHNIQUES,
 }));
 
 // Mock history
