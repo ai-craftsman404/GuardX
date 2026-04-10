@@ -276,7 +276,7 @@ export async function runRedTeam(
     const phaseStart = Date.now();
     const ghModel = attackerModel ?? DEFAULT_GH_MODEL;
     const ghEvaluator = evaluatorModel ?? DEFAULT_GH_EVALUATOR;
-    const apiKey = process.env.OPENROUTER_API_KEY;
+    const apiKey = options.apiKey ?? process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
       throw new Error("OPENROUTER_API_KEY not set for goal-hijack strategy");
     }
