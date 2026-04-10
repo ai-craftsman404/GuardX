@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync, existsSync, readdirSync } from "fs";
 import { join, basename } from "path";
-import { runSecurityScan } from "zeroleaks";
+import { runSecurityScan } from "./scanner.js";
 import {
   ScheduledScan,
   computeNextRunAt,
@@ -51,26 +51,18 @@ export async function runScheduler(schedulesDir?: string): Promise<void> {
     }
 
     try {
-      const mode = schedule.mode ?? "dual";
+      const mode = (schedule.mode ?? "dual") as "extraction" | "injection" | "dual";
       const scanOptions: Parameters<typeof runSecurityScan>[1] = {
-        apiKey: OPENROUTER_API_KEY,
+        ...(mode === "dual"
+          ? { enableDualMode: true }
+          : { scanMode: mode, enableDualMode: false }),
+        ...(schedule.attackerModel && { attackerModel: schedule.attackerModel }),
+        ...(schedule.targetModel && { targetModel: schedule.targetModel }),
+        ...(schedule.evaluatorModel && { evaluatorModel: schedule.evaluatorModel }),
       };
-      if (schedule.attackerModel) scanOptions.attackerModel = schedule.attackerModel;
-      if (schedule.targetModel) scanOptions.targetModel = schedule.targetModel;
-      if (schedule.evaluatorModel) scanOptions.evaluatorModel = schedule.evaluatorModel;
-
-      if (mode === "dual") {
-        scanOptions.enableDualMode = true;
-      } else if (mode === "extraction") {
-        scanOptions.scanMode = "extraction";
-        scanOptions.enableDualMode = false;
-      } else if (mode === "injection") {
-        scanOptions.scanMode = "injection";
-        scanOptions.enableDualMode = false;
-      }
 
       const result = await runSecurityScan(systemPrompt, scanOptions);
-      const resultRecord = result as Record<string, unknown>;
+      const resultRecord = result as unknown as Record<string, unknown>;
 
       // Save to history (failure must not break the runner)
       let scanId: string | undefined;

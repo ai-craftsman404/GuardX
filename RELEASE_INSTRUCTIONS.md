@@ -1,46 +1,48 @@
 # GuardX — Public GitHub Release Instructions
 
 Use this file in a dedicated Claude Code chat session for every release.
-This session's only job: sanitize the working directory and push to GitHub.
+This session's only job: ensure internal docs are git-ignored and push to GitHub.
 
 ---
 
-## BEFORE YOU START — Rotate Your API Key
+## Purpose of This Session
 
-A live OpenRouter API key was found in `.env` and `.claude/settings.local.json`.
-Go to openrouter.ai and rotate it NOW before any git operations.
-GitHub scans pushed commits for secrets and publishes them in the audit log
-even if you delete the file later.
+This is a dedicated release session for GuardX. Its only job is:
+1. Ensure internal docs and secrets are excluded from git via .gitignore
+2. Push the clean codebase to the public GitHub repo
+3. Repeat for every future phase release
+
+**Important:** Do NOT delete internal planning docs from disk. Use .gitignore to
+exclude them from git so they remain available locally for future development.
 
 ---
 
 ## Sanitization Rules (apply before every push)
 
-### Files to DELETE — never publish these
+### Files to GITIGNORE — exclude from git, keep on disk
 
-| File/Directory | Reason |
-|---|---|
-| `.env` | Contains API key |
-| `.claude/` | Local Claude Code harness config with hardcoded user paths and keys |
-| `PLAN.md` | Internal planning document |
-| `PHASE4_SCOPE.md` | Internal scoping |
-| `PHASE5_SCOPE.md` | Internal scoping |
-| `PHASE6_SCOPE.md` | Internal scoping |
-| `HANDOVER_PHASE5_REMAINING.md` | Internal handover notes |
-| `IMPROVEMENTS_PLAN.md` | Internal improvement tracking |
-| Any future `PHASE*_SCOPE.md` | Internal scoping for future phases |
-| Any future `HANDOVER_*.md` | Internal handover notes |
-
-### .gitignore — must contain all of these
+Add these to `.gitignore` so they are never tracked or pushed:
 
 ```
+# Secrets
 .env
 .claude/
+
+# Internal planning docs — keep locally, never push
+PLAN.md
+PHASE*_SCOPE.md
+HANDOVER_*.md
+IMPROVEMENTS_PLAN.md
+
+# Build artifacts
 node_modules/
 dist/
 mcp-server/.guardx/
 *.js.map
 ```
+
+If any of these files are already tracked by git, untrack them with:
+`git rm --cached <filename>` — this removes them from git without deleting from disk.
 
 ### Files safe to publish
 
@@ -57,88 +59,123 @@ mcp-server/.guardx/
 
 ---
 
-## SESSION PROMPT — INITIAL RELEASE (v6.0.0)
+## SESSION PROMPT — PHASE 7 RELEASE
 
 Open a new Claude Code chat session using **Haiku** model at **low effort**.
 Paste this as your first message:
 
 ```
-I need you to handle the public GitHub release of GuardX at
+GuardX Phase 7 is complete. The working directory is
 C:\Users\georg\claude-code-project\GuardX\
 
-Read the file RELEASE_INSTRUCTIONS.md in that directory for full context on
-what must and must not be published.
+Read RELEASE_INSTRUCTIONS.md for the full sanitization rules.
 
 Perform the following steps in order. Stop and report if any step fails.
 
-STEP 1 — Delete internal documents
-Delete these files (they must not be published):
+STEP 1 — Update .gitignore
+Open .gitignore and ensure it contains ALL of these entries (add any missing):
+  .env
+  .claude/
   PLAN.md
-  PHASE4_SCOPE.md
-  PHASE5_SCOPE.md
-  PHASE6_SCOPE.md
-  HANDOVER_PHASE5_REMAINING.md
+  PHASE*_SCOPE.md
+  HANDOVER_*.md
   IMPROVEMENTS_PLAN.md
-Keep all source files, skills, agents, README, CLAUDE.md, and test files.
+  node_modules/
+  dist/
+  mcp-server/.guardx/
+  *.js.map
 
-STEP 2 — Secure secrets
-- Delete .env from the working directory
-- Delete .claude/ directory from the working directory
-- Open .gitignore and confirm it contains: .env, .claude/, node_modules/, dist/,
-  mcp-server/.guardx/, *.js.map — add any that are missing
+STEP 2 — Untrack any newly added internal docs
+Run: git ls-files | grep -E "PLAN\.md|PHASE.*_SCOPE\.md|HANDOVER_.*\.md|IMPROVEMENTS_PLAN\.md|\.env|\.claude/"
+For each file listed, run: git rm --cached <filename>
+This removes them from git without deleting them from disk.
 
-STEP 3 — Scan for secrets
-Run this exact command and report all matches:
-  grep -rn "sk-or-v1\|api_key\|apikey\|API_KEY=" . \
-    --include="*.ts" --include="*.json" --include="*.md" --include="*.yml" \
-    --exclude-dir=node_modules --exclude-dir=.git
-If any matches are found outside of .env or .claude/ (which are deleted),
-STOP and report before continuing.
+STEP 3 — Verify zero ZeroLeaks references
+Run: grep -rn "zeroleaks" . --exclude-dir=node_modules --exclude-dir=.git
+This must return zero matches. If any are found, STOP and report before continuing.
 
-STEP 4 — Initialise git and push
-  git init
+STEP 4 — Scan for secrets
+Run: grep -rn "sk-or-v1\|OPENROUTER_API_KEY=sk" . \
+  --include="*.ts" --include="*.json" --include="*.md" --include="*.yml" \
+  --exclude-dir=node_modules --exclude-dir=.git
+If any matches are found, STOP and report before continuing.
+
+STEP 5 — Stage and push
   git add -A
-  git status   (review — confirm none of the deleted files appear)
-  git commit -m "Initial release: GuardX v6.0.0 — LLM security scanner Claude Code plugin"
-  gh repo create guardx --public \
-    --description "LLM security scanner Claude Code plugin — 25 MCP tools, 19 skills, RAG/agent/supply-chain testing"
-  git remote add origin [URL from gh output]
-  git push -u origin main
+  git status   (confirm no internal docs, secrets, or zeroleaks references appear)
+  git commit -m "Phase 7: native scan engine, remove zeroleaks dependency, MCP deep audit, promptware kill chain simulator, extended probes"
+  git push
 
-STEP 5 — Add repo topics
-  gh repo edit guardx --add-topic "claude-code,llm-security,prompt-injection,mcp,security-scanner,ai-security"
-
-STEP 6 — Confirm completion
+STEP 6 — Confirm
 Report back:
-- Public GitHub repo URL
-- Confirmation .env and .claude/ are NOT in the repo (run: git ls-files | grep -E "\.env|\.claude")
-- List of files deleted in Step 1
-- Total file count: git ls-files | wc -l
+- Commit hash
+- Confirmation zeroleaks is gone: grep -rn "zeroleaks" . --exclude-dir=node_modules --exclude-dir=.git (must be empty)
+- Confirmation PLAN.md, PHASE*_SCOPE.md, .env are NOT in git: git ls-files | grep -E "PLAN\.md|SCOPE\.md|\.env" (must be empty)
+- Total tracked file count: git ls-files | wc -l
 
 Rules:
-- Do not push any file containing an API key pattern
-- Do not push .env or .claude/ under any circumstances
-- Do not push PLAN.md or PHASE*_SCOPE.md
+- Do NOT delete any .md files from disk — only gitignore them
+- Do not push any file containing an API key or zeroleaks reference
 - Use Haiku for any subagents
 - No confirmation stops between steps — complete all 6 steps then report
 ```
 
 ---
 
-## SESSION PROMPT — FUTURE PHASE RELEASES
+## SESSION PROMPT — FUTURE PHASE RELEASES (Phase 8+)
 
-Use the same dedicated Haiku / low effort session. After each new phase completes:
+Open a new Claude Code chat session using **Haiku** model at **low effort**.
+Paste this as your first message:
 
 ```
 GuardX Phase [N] is complete. The working directory is
 C:\Users\georg\claude-code-project\GuardX\
 
-Read RELEASE_INSTRUCTIONS.md for sanitization rules.
+Read RELEASE_INSTRUCTIONS.md for the full sanitization rules.
 
-Then:
-1. Delete any new PHASE[N]_SCOPE.md or HANDOVER_*.md files added this phase
-2. Verify .gitignore still covers .env, .claude/, node_modules/, dist/, .guardx/
-3. Run secret scan: grep -rn "sk-or-v1\|API_KEY=" . --include="*.ts" --include="*.json" --exclude-dir=node_modules
-4. Stage and push: git add -A && git commit -m "Phase [N]: [brief description]" && git push
-5. Report the commit hash and confirm no secrets pushed
+Perform the following steps in order. Stop and report if any step fails.
+
+STEP 1 — Update .gitignore
+Open .gitignore and ensure it contains ALL of these entries (add any missing):
+  .env
+  .claude/
+  PLAN.md
+  PHASE*_SCOPE.md
+  HANDOVER_*.md
+  IMPROVEMENTS_PLAN.md
+  node_modules/
+  dist/
+  mcp-server/.guardx/
+  *.js.map
+
+STEP 2 — Untrack any newly added internal docs
+Run: git ls-files | grep -E "PLAN\.md|PHASE.*_SCOPE\.md|HANDOVER_.*\.md|IMPROVEMENTS_PLAN\.md|\.env|\.claude/"
+For each file listed, run: git rm --cached <filename>
+This removes them from git without deleting them from disk.
+
+STEP 3 — Scan for secrets
+Run: grep -rn "sk-or-v1\|OPENROUTER_API_KEY=sk" . \
+  --include="*.ts" --include="*.json" --include="*.md" --include="*.yml" \
+  --exclude-dir=node_modules --exclude-dir=.git
+If any matches are found, STOP and report before continuing.
+
+STEP 4 — Stage and push
+  git add -A
+  git status   (confirm no internal docs or secrets appear as staged)
+  git commit -m "Phase [N]: [brief description of what was added]"
+  git push
+
+STEP 5 — Confirm
+Report back:
+- Commit hash
+- Confirmation that PLAN.md, PHASE*_SCOPE.md, .env are NOT in git:
+  run: git ls-files | grep -E "PLAN\.md|SCOPE\.md|\.env"
+  (should return nothing)
+- Total tracked file count: git ls-files | wc -l
+
+Rules:
+- Do NOT delete any .md files from disk — only gitignore them
+- Do not push any file containing an API key
+- Use Haiku for any subagents
+- No confirmation stops between steps — complete all 5 steps then report
 ```

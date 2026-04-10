@@ -1,11 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mockRunSecurityScan = vi.hoisted(() => vi.fn());
-vi.mock("zeroleaks", () => ({
+vi.mock("../../src/scanner.js", () => ({
   runSecurityScan: mockRunSecurityScan,
+}));
+
+vi.mock("../../src/probes.js", () => ({
   getAllProbes: vi.fn(),
   getProbesByCategory: vi.fn(),
-  allDocumentedTechniques: [],
+  DOCUMENTED_TECHNIQUES: {},
 }));
 
 const MOCK_SCAN_RESULT = {
@@ -34,7 +37,7 @@ describe("redteam — direct module tests", () => {
 
   it("runRedTeam blitz calls runSecurityScan once with enableDualMode: true", async () => {
     const { runRedTeam } = await getRedTeam();
-    await runRedTeam("Test prompt", { strategy: "blitz", apiKey: "test-key" });
+    await runRedTeam("Test prompt", { strategy: "blitz" });
     expect(mockRunSecurityScan).toHaveBeenCalledTimes(1);
     const callArgs = mockRunSecurityScan.mock.calls[0][1];
     expect(callArgs.enableDualMode).toBe(true);
@@ -42,7 +45,7 @@ describe("redteam — direct module tests", () => {
 
   it("runRedTeam thorough calls runSecurityScan at least twice with different maxTurns", async () => {
     const { runRedTeam } = await getRedTeam();
-    await runRedTeam("Test prompt", { strategy: "thorough", apiKey: "test-key" });
+    await runRedTeam("Test prompt", { strategy: "thorough" });
     expect(mockRunSecurityScan.mock.calls.length).toBeGreaterThanOrEqual(2);
     const turnsValues = mockRunSecurityScan.mock.calls.map((c) => c[1].maxTurns as number);
     const uniqueTurns = new Set(turnsValues);
@@ -51,7 +54,7 @@ describe("redteam — direct module tests", () => {
 
   it("runRedTeam result has phasesCompleted array, strategy, totalDuration", async () => {
     const { runRedTeam } = await getRedTeam();
-    const result = await runRedTeam("Test prompt", { strategy: "blitz", apiKey: "test-key" });
+    const result = await runRedTeam("Test prompt", { strategy: "blitz" });
     expect(Array.isArray(result.phasesCompleted)).toBe(true);
     expect(result.phasesCompleted.length).toBeGreaterThan(0);
     expect(result.strategy).toBe("blitz");
@@ -60,7 +63,7 @@ describe("redteam — direct module tests", () => {
 
   it("runRedTeam stealth calls runSecurityScan once with scanMode extraction and enableDualMode false", async () => {
     const { runRedTeam } = await getRedTeam();
-    await runRedTeam("Test prompt", { strategy: "stealth", apiKey: "test-key" });
+    await runRedTeam("Test prompt", { strategy: "stealth" });
     expect(mockRunSecurityScan).toHaveBeenCalledTimes(1);
     const callArgs = mockRunSecurityScan.mock.calls[0][1];
     expect(callArgs.enableDualMode).toBe(false);
@@ -69,7 +72,7 @@ describe("redteam — direct module tests", () => {
 
   it("runRedTeam stealth result has phasesCompleted with phase 1 and strategy stealth", async () => {
     const { runRedTeam } = await getRedTeam();
-    const result = await runRedTeam("Test prompt", { strategy: "stealth", apiKey: "test-key" });
+    const result = await runRedTeam("Test prompt", { strategy: "stealth" });
     expect(result.strategy).toBe("stealth");
     expect(result.phasesCompleted).toHaveLength(1);
     expect(result.phasesCompleted[0].phase).toBe(1);
@@ -79,11 +82,11 @@ describe("redteam — direct module tests", () => {
 
   it("runRedTeam stealth uses lower maxTurns than thorough", async () => {
     const { runRedTeam } = await getRedTeam();
-    await runRedTeam("Test prompt", { strategy: "stealth", apiKey: "test-key" });
+    await runRedTeam("Test prompt", { strategy: "stealth" });
     const stealthTurns = mockRunSecurityScan.mock.calls[0][1].maxTurns as number;
 
     mockRunSecurityScan.mockReset().mockResolvedValue(MOCK_SCAN_RESULT);
-    await runRedTeam("Test prompt", { strategy: "thorough", apiKey: "test-key" });
+    await runRedTeam("Test prompt", { strategy: "thorough" });
     const thoroughMaxTurns = Math.max(
       ...mockRunSecurityScan.mock.calls.map((c) => c[1].maxTurns as number)
     );
@@ -94,7 +97,7 @@ describe("redteam — direct module tests", () => {
   it("runRedTeam with empty findings from all phases returns empty findings array without crashing", async () => {
     mockRunSecurityScan.mockResolvedValue({ ...MOCK_SCAN_RESULT, findings: [] });
     const { runRedTeam } = await getRedTeam();
-    const result = await runRedTeam("Test prompt", { strategy: "blitz", apiKey: "test-key" });
+    const result = await runRedTeam("Test prompt", { strategy: "blitz" });
     expect(Array.isArray(result.findings)).toBe(true);
     expect(result.findings).toHaveLength(0);
     expect(result.totalFindings).toBe(0);
@@ -107,7 +110,7 @@ describe("redteam — direct module tests", () => {
       .mockResolvedValueOnce({ ...MOCK_SCAN_RESULT, recommendations: [sharedRec, "Another rec"] })
       .mockResolvedValueOnce({ ...MOCK_SCAN_RESULT, recommendations: [sharedRec] });
     const { runRedTeam } = await getRedTeam();
-    const result = await runRedTeam("Test prompt", { strategy: "thorough", apiKey: "test-key" });
+    const result = await runRedTeam("Test prompt", { strategy: "thorough" });
     expect(result.recommendations.filter((r) => r === sharedRec)).toHaveLength(1);
   });
 
@@ -120,7 +123,7 @@ describe("redteam — direct module tests", () => {
       .mockResolvedValueOnce({ ...MOCK_SCAN_RESULT, findings: [phase1Finding] }); // duplicate
 
     const { runRedTeam } = await getRedTeam();
-    const result = await runRedTeam("Test prompt", { strategy: "thorough", apiKey: "test-key" });
+    const result = await runRedTeam("Test prompt", { strategy: "thorough" });
 
     const ids = result.findings.map((f) => (f as Record<string, unknown>).id);
     const uniqueIds = new Set(ids);
@@ -251,21 +254,21 @@ describe("redteam — runRedTeam goal-hijack strategy", () => {
 
   it("existing blitz strategy still works after goal-hijack extension (no regression)", async () => {
     const { runRedTeam } = await getRedTeam();
-    const result = await runRedTeam("Test prompt", { strategy: "blitz", apiKey: "test-key" });
+    const result = await runRedTeam("Test prompt", { strategy: "blitz" });
     expect(result.strategy).toBe("blitz");
     expect(mockRunSecurityScan).toHaveBeenCalledTimes(1);
   });
 
   it("existing thorough strategy still works after goal-hijack extension (no regression)", async () => {
     const { runRedTeam } = await getRedTeam();
-    const result = await runRedTeam("Test prompt", { strategy: "thorough", apiKey: "test-key" });
+    const result = await runRedTeam("Test prompt", { strategy: "thorough" });
     expect(result.strategy).toBe("thorough");
     expect(mockRunSecurityScan.mock.calls.length).toBeGreaterThanOrEqual(2);
   });
 
   it("existing stealth strategy still works after goal-hijack extension (no regression)", async () => {
     const { runRedTeam } = await getRedTeam();
-    const result = await runRedTeam("Test prompt", { strategy: "stealth", apiKey: "test-key" });
+    const result = await runRedTeam("Test prompt", { strategy: "stealth" });
     expect(result.strategy).toBe("stealth");
   });
 });

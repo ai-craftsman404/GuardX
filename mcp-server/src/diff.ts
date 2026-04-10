@@ -121,25 +121,17 @@ export async function diffScans(input: DiffScansInput): Promise<DiffResult> {
     }
     current = c;
   } else if (input.systemPrompt) {
-    const { runSecurityScan } = await import("zeroleaks");
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) {
+    const { runSecurityScan } = await import("./scanner.js");
+    if (!process.env.OPENROUTER_API_KEY) {
       throw new Error(
         "OPENROUTER_API_KEY not set — cannot run fresh scan for diff."
       );
     }
     const scanOptions: Parameters<typeof runSecurityScan>[1] = {
-      apiKey,
-      onProgress: async (_turn: number, _max: number) => {},
+      mode: input.mode ?? "dual",
     };
-    if (input.mode && input.mode !== "dual") {
-      scanOptions.scanMode = input.mode;
-      scanOptions.enableDualMode = false;
-    } else {
-      scanOptions.enableDualMode = true;
-    }
     const result = await runSecurityScan(input.systemPrompt, scanOptions);
-    current = result as Record<string, unknown>;
+    current = result as unknown as Record<string, unknown>;
   } else {
     throw new Error(
       "Provide either currentScanId or systemPrompt to compare against the baseline."

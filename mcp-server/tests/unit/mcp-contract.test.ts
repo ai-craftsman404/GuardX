@@ -2,21 +2,22 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 
+type McpContent = { type: string; text?: string };
+type McpToolResult = { content: McpContent[]; isError?: unknown };
+
 const mockRunSecurityScan = vi.fn();
 const mockGetAllProbes = vi.fn();
 const mockGetProbesByCategory = vi.fn();
-vi.mock("zeroleaks", () => ({
+vi.mock("../../src/scanner.js", () => ({
   runSecurityScan: mockRunSecurityScan,
+}));
+
+vi.mock("../../src/probes.js", () => ({
   getAllProbes: mockGetAllProbes,
   getProbesByCategory: mockGetProbesByCategory,
-  allDocumentedTechniques: [
-    {
-      id: "t1",
-      category: "direct",
-      name: "Test",
-      description: "Test technique",
-    },
-  ],
+  DOCUMENTED_TECHNIQUES: {
+    direct: "Test technique",
+  },
 }));
 
 vi.mock("../../src/history.js", () => ({
@@ -134,9 +135,9 @@ afterEach(async () => {
 });
 
 describe("MCP protocol contract", () => {
-  it("listTools returns exactly 25 tools", async () => {
+  it("listTools returns exactly 27 tools", async () => {
     const result = await client.listTools();
-    expect(result.tools.length).toBe(25);
+    expect(result.tools.length).toBe(27);
   });
 
   it("listTools — every tool has name, description, and inputSchema", async () => {
@@ -152,7 +153,7 @@ describe("MCP protocol contract", () => {
     const result = await client.callTool({
       name: "scan_system_prompt",
       arguments: { systemPrompt: "You are a test assistant." },
-    });
+    }) as McpToolResult;
     expect(Array.isArray(result.content)).toBe(true);
     expect(result.content[0].type).toBe("text");
     expect(() => {
@@ -164,7 +165,7 @@ describe("MCP protocol contract", () => {
     const result = await client.callTool({
       name: "scan_system_prompt",
       arguments: {},
-    });
+    }) as McpToolResult;
     const body = JSON.parse(result.content[0].text as string);
     expect(body.error).toMatch(/systemPrompt/);
   });
@@ -173,7 +174,7 @@ describe("MCP protocol contract", () => {
     const result = await client.callTool({
       name: "list_probes",
       arguments: {},
-    });
+    }) as McpToolResult;
     expect(result.isError).toBeFalsy();
     expect(() => {
       JSON.parse(result.content[0].text as string);

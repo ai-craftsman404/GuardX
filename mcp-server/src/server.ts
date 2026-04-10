@@ -4,12 +4,8 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import {
-  runSecurityScan,
-  getAllProbes,
-  getProbesByCategory,
-  allDocumentedTechniques,
-} from "zeroleaks";
+import { runSecurityScan } from "./scanner.js";
+import { getAllProbes, getProbesByCategory, DOCUMENTED_TECHNIQUES } from "./probes.js";
 import { saveScan, listHistory, getHistoryScan } from "./history.js";
 import { generateHtml, generateSarif, generateJunit, generatePdf } from "./reports.js";
 import { generateCanary, checkCanary, saveCanary, listCanaries } from "./canary.js";
@@ -21,11 +17,12 @@ import { diffScans } from "./diff.js";
 import { testToolExfiltration } from "./toolcall.js";
 import { testMultimodalInjection } from "./multimodal.js";
 import { scanExtendedProbes } from "./probes-extended.js";
-import { testMcpSecurity } from "./mcpsecurity.js";
+import { testMcpSecurity, auditMcpConfig } from "./mcpsecurity.js";
 import { createScheduledScan, listScheduledScans, deleteScheduledScan } from "./scheduler.js";
 import { testRagSecurity } from "./rag.js";
 import { testAgentEscalation } from "./agentescalation.js";
 import { scanSupplyChain } from "./supplychain.js";
+import { simulatePromptwareKillchain } from "./promptware.js";
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 if (!OPENROUTER_API_KEY) {
@@ -701,6 +698,77 @@ export const TOOL_DEFINITIONS = [
       required: ["projectPath"],
     },
   },
+  {
+    name: "audit_mcp_config",
+    description:
+      "Scan MCP project configuration for privilege escalation, tool description poisoning, SSRF patterns, and rogue servers. Detects misconfigurations that could enable LLM attacks.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        configPath: {
+          type: "string",
+          description: "Path to the MCP configuration file to audit.",
+        },
+        checkPrivilegeModel: {
+          type: "boolean",
+          description: "Check for privilege model vulnerabilities (default: true).",
+        },
+        checkToolDescriptions: {
+          type: "boolean",
+          description: "Check tool descriptions for poisoning keywords (default: true).",
+        },
+      },
+      required: ["configPath"],
+    },
+  },
+  {
+    name: "simulate_promptware_killchain",
+    description:
+      "Simulate a 4-stage prompt injection kill chain: inject malicious instructions, trigger tool calls, exfiltrate data, and pivot to secondary systems. Evaluates whether all stages can succeed.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        systemPrompt: {
+          type: "string",
+          description: "The system prompt to test.",
+        },
+        availableTools: {
+          type: "array",
+          description: "Array of tool definitions available to the target agent.",
+          items: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              description: { type: "string" },
+            },
+            required: ["name"],
+          },
+        },
+        targetData: {
+          type: "string",
+          description: "Data the attacker wants to exfiltrate (defaults to systemPrompt).",
+        },
+        stages: {
+          type: "array",
+          description: "Stages to simulate. Default: all 4 (inject, trigger, exfiltrate, pivot).",
+          items: { type: "string", enum: ["inject", "trigger", "exfiltrate", "pivot"] },
+        },
+        attackerModel: {
+          type: "string",
+          description: "OpenRouter model ID for the attacker agent.",
+        },
+        targetModel: {
+          type: "string",
+          description: "OpenRouter model ID for the target agent.",
+        },
+        evaluatorModel: {
+          type: "string",
+          description: "OpenRouter model ID for the evaluator agent.",
+        },
+      },
+      required: ["systemPrompt", "availableTools"],
+    },
+  },
 ];
 
 export async function handleToolCall(
@@ -721,28 +789,20 @@ export async function handleToolCall(
     const evaluatorModel = (args.evaluatorModel as string) ?? DEFAULT_EVALUATOR_MODEL;
 
     const scanOptions: Parameters<typeof runSecurityScan>[1] = {
-      apiKey: OPENROUTER_API_KEY,
+      ...(mode === "dual"
+        ? { enableDualMode: true }
+        : { scanMode: mode as "extraction" | "injection", enableDualMode: false }),
       maxTurns,
       attackerModel,
       targetModel,
       evaluatorModel,
     };
-    if (mode === "dual") {
-      scanOptions.enableDualMode = true;
-    } else if (mode === "extraction") {
-      scanOptions.scanMode = "extraction";
-      scanOptions.enableDualMode = false;
-    } else if (mode === "injection") {
-      scanOptions.scanMode = "injection";
-      scanOptions.enableDualMode = false;
-    }
-    scanOptions.onProgress = async (_turn: number, _max: number) => {};
     try {
       const result = await runSecurityScan(args.systemPrompt as string, scanOptions);
 
       let scanId: string | undefined;
       try {
-        scanId = saveScan(result as Record<string, unknown>, args.systemPrompt as string);
+        scanId = saveScan(result as unknown as Record<string, unknown>, args.systemPrompt as string);
       } catch {
         // History save failure must not break the scan response
       }
@@ -771,7 +831,7 @@ export async function handleToolCall(
   }
 
   if (name === "list_techniques") {
-    return { content: [{ type: "text", text: JSON.stringify(allDocumentedTechniques, null, 2) }] };
+    return { content: [{ type: "text", text: JSON.stringify(DOCUMENTED_TECHNIQUES, null, 2) }] };
   }
 
   if (name === "get_scan_config") {
@@ -941,7 +1001,6 @@ export async function handleToolCall(
       const result = await runRedTeam(args.systemPrompt as string, {
         strategy: strategy as "blitz" | "thorough" | "stealth" | "goal-hijack",
         maxPhases: args.maxPhases as number | undefined,
-        apiKey: OPENROUTER_API_KEY as string,
         attackerModel: args.attackerModel as string | undefined,
         targetModel: args.targetModel as string | undefined,
         evaluatorModel: args.evaluatorModel as string | undefined,
@@ -1203,7 +1262,6 @@ export async function handleToolCall(
         sensitivePatterns: args.sensitivePatterns as string[] | undefined,
         attackerModel: args.attackerModel as string | undefined,
         evaluatorModel: args.evaluatorModel as string | undefined,
-        apiKey: OPENROUTER_API_KEY as string,
       });
       return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
     } catch (err) {
@@ -1362,12 +1420,68 @@ export async function handleToolCall(
     }
   }
 
+  if (name === "audit_mcp_config") {
+    if (!args?.configPath || typeof args.configPath !== "string" || !args.configPath.trim()) {
+      return {
+        content: [{ type: "text", text: JSON.stringify({ error: "Missing required parameter: configPath must be a non-empty string." }) }],
+        isError: true,
+      };
+    }
+    try {
+      const result = auditMcpConfig({
+        configPath: args.configPath as string,
+        checkPrivilegeModel: args.checkPrivilegeModel as boolean | undefined,
+        checkToolDescriptions: args.checkToolDescriptions as boolean | undefined,
+      });
+      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return {
+        content: [{ type: "text", text: JSON.stringify({ error: `MCP config audit failed: ${message}` }) }],
+        isError: true,
+      };
+    }
+  }
+
+  if (name === "simulate_promptware_killchain") {
+    if (!args?.systemPrompt || typeof args.systemPrompt !== "string" || !args.systemPrompt.trim()) {
+      return {
+        content: [{ type: "text", text: JSON.stringify({ error: "Missing required parameter: systemPrompt must be a non-empty string." }) }],
+        isError: true,
+      };
+    }
+    if (!Array.isArray(args?.availableTools)) {
+      return {
+        content: [{ type: "text", text: JSON.stringify({ error: "Missing required parameter: availableTools must be an array." }) }],
+        isError: true,
+      };
+    }
+    try {
+      const result = await simulatePromptwareKillchain({
+        systemPrompt: args.systemPrompt as string,
+        availableTools: args.availableTools as Parameters<typeof simulatePromptwareKillchain>[0]["availableTools"],
+        targetData: args.targetData as string | undefined,
+        stages: args.stages as ("inject" | "trigger" | "exfiltrate" | "pivot")[] | undefined,
+        attackerModel: args.attackerModel as string | undefined,
+        targetModel: args.targetModel as string | undefined,
+        evaluatorModel: args.evaluatorModel as string | undefined,
+      });
+      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return {
+        content: [{ type: "text", text: JSON.stringify({ error: `Promptware kill chain simulation failed: ${message}` }) }],
+        isError: true,
+      };
+    }
+  }
+
   return { content: [{ type: "text", text: JSON.stringify({ error: `Unknown tool: ${name}` }) }], isError: true };
 }
 
 export function buildServer(): Server {
   const server = new Server(
-    { name: "guardx", version: "6.0.0" },
+    { name: "guardx", version: "7.0.0" },
     { capabilities: { tools: {} } }
   );
 

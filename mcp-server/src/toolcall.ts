@@ -163,7 +163,7 @@ export async function testToolExfiltration(
     throw new Error("OPENROUTER_API_KEY not set — cannot run tool exfiltration test.");
   }
 
-  const { runSecurityScan } = await import("zeroleaks");
+  const { runSecurityScan } = await import("./scanner.js");
 
   const exfiltrationAttempts: ToolCallAttempt[] = [];
 
@@ -172,14 +172,11 @@ export async function testToolExfiltration(
     let scanResult: Record<string, unknown>;
     try {
       scanResult = (await runSecurityScan(probePrompt, {
-        apiKey,
         maxTurns: 3,
         attackerModel: options?.attackerModel ?? "anthropic/claude-sonnet-4.6",
         targetModel: options?.targetModel ?? "anthropic/claude-sonnet-4.6",
-        enableDualMode: false,
-        scanMode: "extraction",
-        onProgress: async () => {},
-      })) as Record<string, unknown>;
+        mode: "extraction",
+      })) as unknown as Record<string, unknown>;
     } catch {
       continue;
     }

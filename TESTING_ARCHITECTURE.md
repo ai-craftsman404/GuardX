@@ -19,7 +19,7 @@ to LLM scanning is now applied to the quality of GuardX's own code.
 **Responsibilities:**
 - Write Vitest unit tests following TDD conventions
 - Cover happy path, edge cases, boundary conditions, and error paths
-- Mock `zeroleaks` correctly — matching real API contracts
+- Mock GuardX scanner modules correctly — matching real API contracts
 - Write tests before implementation (strict TDD order)
 - Address challenges raised by the Adversarial Evaluator
 
@@ -111,7 +111,7 @@ Specialist agent for writing GuardX test suites.
 
 **Behaviour rules:**
 - Always write tests BEFORE implementation files
-- Always mock `zeroleaks` at module level, not inside individual tests
+- Always mock GuardX scanner modules at module level, not inside individual tests
 - Always test all enum values for every enum parameter
 - Always include at least one test for missing required params
 - Always include at least one test for each error path
@@ -128,7 +128,7 @@ Adversarial specialist agent for challenging GuardX test suites.
   security logic flaws)
 - GuardX module architecture and data flow
 - Common patterns that cause false negatives in security scanners
-- ZeroLeaks API contracts (correct function names, return shapes, parameter order)
+- GuardX scanner API contracts (correct function names, return shapes, parameter order)
 
 **Tool access:** Read, Glob, Grep (read-only — evaluator never writes code)
 

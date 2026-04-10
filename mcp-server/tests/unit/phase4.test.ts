@@ -1,11 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 // Mock all modules to avoid API key requirement and side effects
-vi.mock("zeroleaks", () => ({
+vi.mock("../../src/scanner.js", () => ({
   runSecurityScan: vi.fn(),
+}));
+
+vi.mock("../../src/probes.js", () => ({
   getAllProbes: vi.fn().mockReturnValue([]),
   getProbesByCategory: vi.fn().mockReturnValue([]),
-  allDocumentedTechniques: [],
+  DOCUMENTED_TECHNIQUES: {},
 }));
 
 vi.mock("../../src/history.js", () => ({
@@ -146,9 +149,9 @@ describe("phase4 — tool registration", () => {
     expect(names).toContain("test_multimodal_injection");
   });
 
-  it("total tool count is 22", async () => {
+  it("total tool count is 27", async () => {
     const { TOOL_DEFINITIONS } = await getServerModule();
-    expect(TOOL_DEFINITIONS).toHaveLength(25);
+    expect(TOOL_DEFINITIONS).toHaveLength(27);
   });
 
   it("diff_scans tool has correct input schema with baselineScanId required", async () => {

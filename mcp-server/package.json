@@ -1,6 +1,6 @@
 {
   "name": "guardx-mcp-server",
-  "version": "6.0.0",
+  "version": "7.0.0",
   "type": "module",
   "scripts": {
     "dev": "tsx src/server.ts",
@@ -13,8 +13,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
-    "pdfkit": "^0.15.0",
-    "zeroleaks": "^1.2.1"
+    "pdfkit": "^0.15.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

@@ -29,8 +29,8 @@ describe("phase5 — all 5 new tools registered in server", () => {
     expect(toolMap.has("delete_scheduled_scan")).toBe(true);
   });
 
-  it("total tool count is 22", () => {
-    expect(TOOL_DEFINITIONS).toHaveLength(25);
+  it("total tool count is 27", () => {
+    expect(TOOL_DEFINITIONS).toHaveLength(27);
   });
 });
 

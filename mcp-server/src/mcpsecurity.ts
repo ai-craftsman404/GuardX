@@ -44,7 +44,8 @@ export interface TestMcpSecurityArgs {
   sensitivePatterns?: string[];
   attackerModel?: string;
   evaluatorModel?: string;
-  apiKey: string;
+  /** API key override — ignored at runtime (key read from env), accepted for backwards compatibility */
+  apiKey?: string;
 }
 
 // ─── Pure helpers ────────────────────────────────────────────────────────────
@@ -84,13 +85,17 @@ async function callModel(
   systemPrompt: string,
   userMessage: string,
   model: string,
-  apiKey: string
+  apiKey?: string
 ): Promise<string> {
+  const key = apiKey ?? process.env.OPENROUTER_API_KEY;
+  if (!key) {
+    throw new Error("OPENROUTER_API_KEY not set");
+  }
   const res = await fetch(OPENROUTER_BASE, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: `Bearer ${key}`,
     },
     body: JSON.stringify({
       model,
@@ -124,7 +129,7 @@ async function runAttackAndEvaluate(
   sensitivePatterns: string[],
   model: string,
   evaluatorModel: string,
-  apiKey: string
+  apiKey?: string
 ): Promise<McpSecurityFinding | null> {
   const targetResponse = await callModel(systemPrompt, attackPrompt, model, apiKey);
 
@@ -247,7 +252,7 @@ export async function testMcpSecurity(
   const sensitivePatterns = args.sensitivePatterns ?? DEFAULT_SENSITIVE_PATTERNS;
   const model = args.attackerModel ?? DEFAULT_MODEL;
   const evaluatorModel = args.evaluatorModel ?? DEFAULT_MODEL;
-  const apiKey = args.apiKey;
+  const apiKey = args.apiKey ?? process.env.OPENROUTER_API_KEY;
   const findings: McpSecurityFinding[] = [];
 
   for (const tool of args.mcpToolSchemas) {
@@ -342,4 +347,184 @@ export async function testMcpSecurity(
     riskLevel,
     recommendations,
   };
+}
+
+export interface McpConfigFinding {
+  type:
+    | "privilege_model"
+    | "tool_description_poison"
+    | "ssrf_pattern"
+    | "rogue_server";
+  severity: "critical" | "high" | "medium" | "low";
+  description: string;
+  recommendation: string;
+  affectedServer?: string;
+  affectedTool?: string;
+}
+
+export interface McpConfigAuditResult {
+  findings: McpConfigFinding[];
+  riskLevel: "critical" | "high" | "medium" | "low" | "pass";
+  summary: string;
+}
+
+export interface AuditMcpConfigArgs {
+  configPath: string;
+  checkPrivilegeModel?: boolean;
+  checkToolDescriptions?: boolean;
+}
+
+export function auditMcpConfig(
+  args: AuditMcpConfigArgs
+): McpConfigAuditResult {
+  const {
+    configPath,
+    checkPrivilegeModel = true,
+    checkToolDescriptions = true,
+  } = args;
+
+  const findings: McpConfigFinding[] = [];
+  let riskLevel: "critical" | "high" | "medium" | "low" | "pass" = "pass";
+
+  try {
+    const fs = require("fs");
+    const config = JSON.parse(fs.readFileSync(configPath, "utf-8"));
+    const mcpServers = config.mcpServers || {};
+
+    // Check 1: Privilege model audit
+    if (checkPrivilegeModel) {
+      for (const [serverName, serverConfig] of Object.entries(mcpServers)) {
+        const server = serverConfig as Record<string, unknown>;
+        if (
+          server.tools === "*" ||
+          (typeof server.tools === "string" && server.tools === "*")
+        ) {
+          findings.push({
+            type: "privilege_model",
+            severity: "high",
+            description: `Server '${serverName}' allows all tools without an explicit allowlist`,
+            recommendation:
+              "Define an explicit allowlist of trusted tools for this server",
+            affectedServer: serverName,
+          });
+          if ((riskLevel as string) !== "critical") riskLevel = "high";
+        }
+      }
+    }
+
+    // Check 2: Tool description poisoning
+    if (checkToolDescriptions) {
+      for (const [serverName, serverConfig] of Object.entries(mcpServers)) {
+        const server = serverConfig as Record<string, unknown>;
+        const tools = server.tools;
+        if (
+          typeof tools === "object" &&
+          tools !== null &&
+          !Array.isArray(tools)
+        ) {
+          for (const [toolName, toolDef] of Object.entries(tools)) {
+            const tool = toolDef as Record<string, unknown>;
+            const description = (tool.description || "") as string;
+            const poisonKeywords = [
+              "ignore",
+              "instruction",
+              "override",
+              "bypass",
+              "disable",
+            ];
+            if (
+              poisonKeywords.some((kw) =>
+                description.toLowerCase().includes(kw)
+              )
+            ) {
+              findings.push({
+                type: "tool_description_poison",
+                severity: "high",
+                description: `Tool '${toolName}' in server '${serverName}' has adversarial keywords in description`,
+                recommendation:
+                  "Review and sanitize tool descriptions to remove instruction keywords",
+                affectedServer: serverName,
+                affectedTool: toolName,
+              });
+              if ((riskLevel as string) !== "critical") riskLevel = "high";
+            }
+          }
+        }
+      }
+    }
+
+    // Check 3: SSRF pattern detection (CVE-2026-26118)
+    for (const [serverName, serverConfig] of Object.entries(mcpServers)) {
+      const server = serverConfig as Record<string, unknown>;
+      const env = (server.env || {}) as Record<string, unknown>;
+      for (const [envKey, envVal] of Object.entries(env)) {
+        const value = String(envVal);
+        if (
+          value.includes("file://") ||
+          value.includes("file:///") ||
+          value.startsWith("/etc/")
+        ) {
+          findings.push({
+            type: "ssrf_pattern",
+            severity: "critical",
+            description: `Server '${serverName}' has potential SSRF vulnerability in ${envKey}`,
+            recommendation:
+              "Remove file:// URIs and absolute paths from environment variables",
+            affectedServer: serverName,
+          });
+          riskLevel = "critical";
+        }
+      }
+    }
+
+    // Check 4: Rogue server detection
+    for (const [serverName, serverConfig] of Object.entries(mcpServers)) {
+      const server = serverConfig as Record<string, unknown>;
+      const command = String(server.command || "");
+      const args = (server.args || []) as unknown[];
+      const argsStr = JSON.stringify(args);
+
+      // Check for commands/args that look suspicious
+      const suspiciousPatterns = [
+        "malicious",
+        "backdoor",
+        "trojan",
+        "spy",
+        "exfil",
+      ];
+      const isSuspicious = suspiciousPatterns.some(
+        (pattern) =>
+          command.toLowerCase().includes(pattern) ||
+          argsStr.toLowerCase().includes(pattern)
+      );
+
+      if (isSuspicious || serverName.toLowerCase().includes("malicious")) {
+        findings.push({
+          type: "rogue_server",
+          severity: "medium",
+          description: `Server '${serverName}' appears to be a rogue server based on naming or command`,
+          recommendation:
+            "Verify server authenticity and source before enabling",
+          affectedServer: serverName,
+        });
+        if (riskLevel === "pass") riskLevel = "medium";
+      }
+    }
+  } catch (error) {
+    findings.push({
+      type: "privilege_model",
+      severity: "critical",
+      description: "Could not read or parse MCP configuration file",
+      recommendation:
+        "Provide a valid MCP configuration file at the specified path",
+    });
+    riskLevel = "critical";
+  }
+
+  const summary =
+    findings.length === 0
+      ? "MCP configuration passed security audit with no issues detected"
+      : `Found ${findings.length} security issues in MCP configuration`;
+
+  return { findings, riskLevel, summary };
 }
