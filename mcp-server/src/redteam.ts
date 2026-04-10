@@ -1,4 +1,4 @@
-import { runSecurityScan } from "./scanner.js";
+import { runSecurityScan, type ScanMode } from "./scanner.js";
 
 export type RedTeamStrategy = "blitz" | "thorough" | "stealth" | "goal-hijack";
 
@@ -60,6 +60,8 @@ export interface RedTeamResult {
   phasesCompleted: RedTeamPhase[];
   totalFindings: number;
   overallVulnerability: string;
+  /** Alias for overallVulnerability — for backwards compatibility */
+  vulnerability: string;
   leakStatus: string;
   findings: unknown[];
   recommendations: string[];
@@ -109,14 +111,15 @@ export async function runRedTeam(
   options: {
     strategy: RedTeamStrategy;
     maxPhases?: number;
-    apiKey: string;
     attackerModel?: string;
     targetModel?: string;
     evaluatorModel?: string;
     targetCapability?: string;
+    /** API key override — ignored at runtime (key read from env), accepted for backwards compatibility */
+    apiKey?: string;
   }
 ): Promise<RedTeamResult> {
-  const { strategy, apiKey, attackerModel, targetModel, evaluatorModel } = options;
+  const { strategy, attackerModel, targetModel, evaluatorModel } = options;
   const phasesCompleted: RedTeamPhase[] = [];
   let allFindings: unknown[] = [];
   let overallVulnerability = "secure";
@@ -127,11 +130,9 @@ export async function runRedTeam(
   const startTime = Date.now();
 
   const baseOptions = {
-    apiKey,
     attackerModel,
     targetModel,
     evaluatorModel,
-    onProgress: async (_turn: number, _max: number) => {},
   };
 
   if (strategy === "blitz") {
@@ -140,7 +141,7 @@ export async function runRedTeam(
       ...baseOptions,
       enableDualMode: true,
       maxTurns: 10,
-    }) as Record<string, unknown>;
+    }) as unknown as Record<string, unknown>;
 
     const findings = Array.isArray(result.findings) ? result.findings : [];
     allFindings = deduplicateFindings([...allFindings, ...findings]);
@@ -172,7 +173,7 @@ export async function runRedTeam(
       ...baseOptions,
       enableDualMode: true,
       maxTurns: 8,
-    }) as Record<string, unknown>;
+    }) as unknown as Record<string, unknown>;
 
     const findings1 = Array.isArray(result1.findings) ? result1.findings : [];
     allFindings = deduplicateFindings([...allFindings, ...findings1]);
@@ -212,7 +213,7 @@ export async function runRedTeam(
       ...baseOptions,
       enableDualMode: true,
       maxTurns: 15,
-    }) as Record<string, unknown>;
+    }) as unknown as Record<string, unknown>;
 
     const findings2 = Array.isArray(result2.findings) ? result2.findings : [];
     allFindings = deduplicateFindings([...allFindings, ...findings2]);
@@ -244,7 +245,7 @@ export async function runRedTeam(
       ...baseOptions,
       enableDualMode: true,
       maxTurns: 20,
-    }) as Record<string, unknown>;
+    }) as unknown as Record<string, unknown>;
 
     const findings3 = Array.isArray(result3.findings) ? result3.findings : [];
     allFindings = deduplicateFindings([...allFindings, ...findings3]);
@@ -275,6 +276,10 @@ export async function runRedTeam(
     const phaseStart = Date.now();
     const ghModel = attackerModel ?? DEFAULT_GH_MODEL;
     const ghEvaluator = evaluatorModel ?? DEFAULT_GH_EVALUATOR;
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) {
+      throw new Error("OPENROUTER_API_KEY not set for goal-hijack strategy");
+    }
 
     const ghFindings: unknown[] = [];
 
@@ -356,10 +361,10 @@ export async function runRedTeam(
     const phase1Start = Date.now();
     const result = await runSecurityScan(systemPrompt, {
       ...baseOptions,
-      scanMode: "extraction" as Parameters<typeof runSecurityScan>[1]["scanMode"],
+      scanMode: "extraction" as ScanMode,
       enableDualMode: false,
       maxTurns: 5,
-    }) as Record<string, unknown>;
+    }) as unknown as Record<string, unknown>;
 
     const findings = Array.isArray(result.findings) ? result.findings : [];
     allFindings = deduplicateFindings([...allFindings, ...findings]);
@@ -393,6 +398,7 @@ export async function runRedTeam(
     phasesCompleted,
     totalFindings: allFindings.length,
     overallVulnerability,
+    vulnerability: overallVulnerability,
     leakStatus,
     findings: allFindings,
     recommendations: uniqueRecommendations,

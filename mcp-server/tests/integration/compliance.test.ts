@@ -27,18 +27,16 @@ describeIntegration(
       "every finding from a real scan has non-empty MITRE ATLAS and EU AI Act tags",
       async () => {
         const scanResult = await runSecurityScan(EVALUATION_PROMPT_REFERENCE, {
-          apiKey: process.env.OPENROUTER_API_KEY!,
           attackerModel: CHEAP_MODEL,
           evaluatorModel: CHEAP_MODEL,
           maxTurns: 5,
-          maxDurationMs: 90_000,
-          enableDualMode: true,
+          mode: "dual",
         });
 
         expect(scanResult).toBeDefined();
         expect(Array.isArray(scanResult.findings)).toBe(true);
 
-        const enriched = enrichFindings(scanResult as Record<string, unknown>);
+        const enriched = enrichFindings(scanResult as unknown as Record<string, unknown>);
 
         // complianceSummary must be present and populated
         expect(enriched.complianceSummary).toBeDefined();
@@ -103,15 +101,13 @@ describeIntegration(
       "enrichFindings is idempotent — running twice on same result produces same tags",
       async () => {
         const scanResult = await runSecurityScan(EVALUATION_PROMPT_REFERENCE, {
-          apiKey: process.env.OPENROUTER_API_KEY!,
           attackerModel: CHEAP_MODEL,
           evaluatorModel: CHEAP_MODEL,
           maxTurns: 3,
-          maxDurationMs: 60_000,
-          enableDualMode: true,
+          mode: "dual",
         });
 
-        const first = enrichFindings(scanResult as Record<string, unknown>);
+        const first = enrichFindings(scanResult as unknown as Record<string, unknown>);
         const second = enrichFindings(first as unknown as Record<string, unknown>);
 
         // Tags must be identical on second pass (no double-enrichment)

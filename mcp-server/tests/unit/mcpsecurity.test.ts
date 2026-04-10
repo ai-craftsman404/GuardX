@@ -39,8 +39,8 @@ function makeOpenRouterResponse(content: string) {
   };
 }
 
-function makeSecurityFindingResponse(finding: Partial<McpSecurityFinding>) {
-  return makeOpenRouterResponse(JSON.stringify(finding));
+function makeSecurityFindingResponse(finding: Partial<McpSecurityFinding> & { isViolation?: boolean }) {
+  return makeOpenRouterResponse(JSON.stringify({ isViolation: true, ...finding }));
 }
 
 function makeCleanResponse() {
@@ -284,7 +284,6 @@ describe("mcpsecurity — testMcpSecurity", () => {
       "fetch",
       vi.fn().mockResolvedValue(
         makeSecurityFindingResponse({
-          isViolation: true,
           attackType: "arg_exfiltration",
           toolName: "get_user_data",
           sensitiveDataFound: "API_KEY",
@@ -312,7 +311,6 @@ describe("mcpsecurity — testMcpSecurity", () => {
         const userContent: string = body.messages?.[1]?.content ?? "";
         if (userContent.startsWith("Attack type: description_poison\nTool: get_user_data")) {
           return makeSecurityFindingResponse({
-            isViolation: true,
             attackType: "description_poison",
             toolName: "get_user_data",
             severity: "high",
@@ -342,7 +340,6 @@ describe("mcpsecurity — testMcpSecurity", () => {
       "fetch",
       vi.fn().mockResolvedValue(
         makeSecurityFindingResponse({
-          isViolation: true,
           attackType: "arg_exfiltration",
           toolName: "get_user_data",
           sensitiveDataFound: "TOKEN",
@@ -379,7 +376,6 @@ describe("mcpsecurity — testMcpSecurity", () => {
       "fetch",
       vi.fn().mockResolvedValue(
         makeSecurityFindingResponse({
-          isViolation: true,
           attackType: "description_poison",
           toolName: "get_user_data",
           severity: "high",
@@ -402,7 +398,6 @@ describe("mcpsecurity — testMcpSecurity", () => {
       "fetch",
       vi.fn().mockResolvedValue(
         makeSecurityFindingResponse({
-          isViolation: true,
           attackType: "arg_exfiltration",
           toolName: "send_email",
           sensitiveDataFound: "SECRET",
@@ -426,7 +421,6 @@ describe("mcpsecurity — testMcpSecurity", () => {
       "fetch",
       vi.fn().mockResolvedValue(
         makeSecurityFindingResponse({
-          isViolation: true,
           attackType: "arg_exfiltration",
           toolName: "get_user_data",
           sensitiveDataFound: "API_KEY",
@@ -502,7 +496,6 @@ describe("mcpsecurity — testMcpSecurity", () => {
       "fetch",
       vi.fn().mockResolvedValue(
         makeSecurityFindingResponse({
-          isViolation: true,
           attackType: "invocation_hijack",
           toolName: "get_user_data",
           severity: "high",
@@ -569,7 +562,6 @@ describe("mcpsecurity — testMcpSecurity", () => {
       "fetch",
       vi.fn().mockResolvedValue(
         makeSecurityFindingResponse({
-          isViolation: true,
           attackType: "description_poison",
           toolName: "get_user_data",
           severity: "high",

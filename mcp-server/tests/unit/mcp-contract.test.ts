@@ -2,6 +2,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 
+type McpContent = { type: string; text?: string };
+type McpToolResult = { content: McpContent[]; isError?: unknown };
+
 const mockRunSecurityScan = vi.fn();
 const mockGetAllProbes = vi.fn();
 const mockGetProbesByCategory = vi.fn();
@@ -150,7 +153,7 @@ describe("MCP protocol contract", () => {
     const result = await client.callTool({
       name: "scan_system_prompt",
       arguments: { systemPrompt: "You are a test assistant." },
-    });
+    }) as McpToolResult;
     expect(Array.isArray(result.content)).toBe(true);
     expect(result.content[0].type).toBe("text");
     expect(() => {
@@ -162,7 +165,7 @@ describe("MCP protocol contract", () => {
     const result = await client.callTool({
       name: "scan_system_prompt",
       arguments: {},
-    });
+    }) as McpToolResult;
     const body = JSON.parse(result.content[0].text as string);
     expect(body.error).toMatch(/systemPrompt/);
   });
@@ -171,7 +174,7 @@ describe("MCP protocol contract", () => {
     const result = await client.callTool({
       name: "list_probes",
       arguments: {},
-    });
+    }) as McpToolResult;
     expect(result.isError).toBeFalsy();
     expect(() => {
       JSON.parse(result.content[0].text as string);

@@ -172,14 +172,11 @@ export async function testToolExfiltration(
     let scanResult: Record<string, unknown>;
     try {
       scanResult = (await runSecurityScan(probePrompt, {
-        apiKey,
         maxTurns: 3,
         attackerModel: options?.attackerModel ?? "anthropic/claude-sonnet-4.6",
         targetModel: options?.targetModel ?? "anthropic/claude-sonnet-4.6",
-        enableDualMode: false,
-        scanMode: "extraction",
-        onProgress: async () => {},
-      })) as Record<string, unknown>;
+        mode: "extraction",
+      })) as unknown as Record<string, unknown>;
     } catch {
       continue;
     }

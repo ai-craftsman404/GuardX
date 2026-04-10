@@ -10,7 +10,7 @@ function ensureDir(dir: string) {
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
 }
 
-interface Finding {
+export interface Finding {
   id?: string;
   severity?: string;
   technique?: string;
@@ -18,6 +18,7 @@ interface Finding {
   extractedContent?: string;
   confidence?: string;
   evidence?: string;
+  [key: string]: unknown;
 }
 
 export interface ScanRecord {
@@ -342,10 +343,7 @@ export function generatePdf(scan: ScanRecord, outputId: string): Promise<string>
   doc.text(`Date: ${safe(scan.scannedAt ?? new Date().toISOString())}`);
   doc.moveDown(0.5);
 
-  doc
-    .fontSize(18)
-    .fillColor(r, g, b)
-    .text(`Overall Rating: ${safe(vulnRating.toUpperCase())}`, { align: "left" });
+  doc.fontSize(18).fillColor([r, g, b] as [number, number, number]).text(`Overall Rating: ${safe(vulnRating.toUpperCase())}`);
 
   doc.moveDown(1);
   doc.fontSize(12).fillColor("#111111");
@@ -358,9 +356,7 @@ export function generatePdf(scan: ScanRecord, outputId: string): Promise<string>
   doc.moveDown(0.5);
 
   doc.fontSize(12);
-  doc
-    .fillColor(r, g, b)
-    .text(`Vulnerability Rating: ${safe(vulnRating.toUpperCase())}`, { continued: false });
+  doc.fillColor([r, g, b] as [number, number, number]).text(`Vulnerability Rating: ${safe(vulnRating.toUpperCase())}`);
   doc.fillColor("#111111").text(`Leak Status: ${safe(scan.leakStatus ?? "unknown")}`);
   doc.text(`Total Findings: ${findings.length}`);
 
@@ -395,16 +391,18 @@ export function generatePdf(scan: ScanRecord, outputId: string): Promise<string>
   } else {
     findings.forEach((f, i) => {
       const [fr, fg, fb] = PDF_SEVERITY_COLOR[f.severity ?? "low"] ?? [107, 114, 128];
-      doc.fontSize(13).fillColor(fr, fg, fb).text(
-        `[${safe((f.severity ?? "low").toUpperCase())}] ${safe(f.technique ?? "unknown")}`,
+      doc.fontSize(13).fillColor([fr, fg, fb] as [number, number, number]).text(
+        `[${safe((f.severity ?? "low").toUpperCase())}] ${safe(f.technique ?? "unknown")}`
       );
       doc.fontSize(10).fillColor("#6b7280");
       doc.text(`Category: ${safe(f.category ?? "")}   |   Confidence: ${safe(f.confidence ?? "")}`);
       if (f.extractedContent) {
-        doc.fontSize(10).fillColor("#374151").text(`Extracted: ${safe(f.extractedContent.slice(0, 300))}`);
+        doc.fontSize(10).fillColor("#374151");
+        doc.text(`Extracted: ${safe(f.extractedContent.slice(0, 300))}`);
       }
       if (f.evidence) {
-        doc.fontSize(10).fillColor("#374151").text(`Evidence: ${safe(f.evidence)}`);
+        doc.fontSize(10).fillColor("#374151");
+        doc.text(`Evidence: ${safe(f.evidence)}`);
       }
       doc.moveDown(0.7);
       if (i < findings.length - 1) {

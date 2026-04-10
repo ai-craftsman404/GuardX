@@ -6,7 +6,13 @@ export type ScanMode = "extraction" | "injection" | "dual";
 
 export interface ScanOptions {
   mode?: ScanMode;
+  /** Alias for mode — accepted for backwards compatibility */
+  scanMode?: ScanMode;
   maxTurns?: number;
+  /** Maximum wall-clock duration in ms for the scan */
+  maxDurationMs?: number;
+  /** Run both extraction and injection modes */
+  enableDualMode?: boolean;
   attackerModel?: string;
   targetModel?: string;
   evaluatorModel?: string;

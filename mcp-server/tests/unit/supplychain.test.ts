@@ -102,7 +102,9 @@ describe("supplychain — scanCves", () => {
 // ---------------------------------------------------------------------------
 
 describe("supplychain — package file parsing", () => {
-  afterEach(() => vi.resetAllMocks());
+  afterEach(() => {
+    vi.resetAllMocks();
+  });
 
   it("parses package.json and finds LiteLLM CVE when version in range", () => {
     mockFs({
@@ -286,7 +288,9 @@ describe("supplychain — computeSupplyChainRisk", () => {
 // ---------------------------------------------------------------------------
 
 describe("supplychain — scanSupplyChain", () => {
-  afterEach(() => vi.resetAllMocks());
+  afterEach(() => {
+    vi.resetAllMocks();
+  });
 
   it("throws descriptive error when projectPath does not exist", async () => {
     mockFs({});

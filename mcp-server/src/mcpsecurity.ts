@@ -44,7 +44,8 @@ export interface TestMcpSecurityArgs {
   sensitivePatterns?: string[];
   attackerModel?: string;
   evaluatorModel?: string;
-  apiKey: string;
+  /** API key override — ignored at runtime (key read from env), accepted for backwards compatibility */
+  apiKey?: string;
 }
 
 // ─── Pure helpers ────────────────────────────────────────────────────────────
@@ -84,13 +85,17 @@ async function callModel(
   systemPrompt: string,
   userMessage: string,
   model: string,
-  apiKey: string
+  apiKey?: string
 ): Promise<string> {
+  const key = apiKey ?? process.env.OPENROUTER_API_KEY;
+  if (!key) {
+    throw new Error("OPENROUTER_API_KEY not set");
+  }
   const res = await fetch(OPENROUTER_BASE, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: `Bearer ${key}`,
     },
     body: JSON.stringify({
       model,
@@ -124,7 +129,7 @@ async function runAttackAndEvaluate(
   sensitivePatterns: string[],
   model: string,
   evaluatorModel: string,
-  apiKey: string
+  apiKey?: string
 ): Promise<McpSecurityFinding | null> {
   const targetResponse = await callModel(systemPrompt, attackPrompt, model, apiKey);
 
@@ -247,7 +252,7 @@ export async function testMcpSecurity(
   const sensitivePatterns = args.sensitivePatterns ?? DEFAULT_SENSITIVE_PATTERNS;
   const model = args.attackerModel ?? DEFAULT_MODEL;
   const evaluatorModel = args.evaluatorModel ?? DEFAULT_MODEL;
-  const apiKey = args.apiKey;
+  const apiKey = args.apiKey ?? process.env.OPENROUTER_API_KEY;
   const findings: McpSecurityFinding[] = [];
 
   for (const tool of args.mcpToolSchemas) {
@@ -379,8 +384,7 @@ export function auditMcpConfig(
   } = args;
 
   const findings: McpConfigFinding[] = [];
-  let riskLevel: "critical" | "high" | "medium" | "low" | "pass" =
-    "pass";
+  let riskLevel: "critical" | "high" | "medium" | "low" | "pass" = "pass";
 
   try {
     const fs = require("fs");
@@ -403,7 +407,7 @@ export function auditMcpConfig(
               "Define an explicit allowlist of trusted tools for this server",
             affectedServer: serverName,
           });
-          if (riskLevel !== "critical") riskLevel = "high";
+          if ((riskLevel as string) !== "critical") riskLevel = "high";
         }
       }
     }
@@ -442,7 +446,7 @@ export function auditMcpConfig(
                 affectedServer: serverName,
                 affectedTool: toolName,
               });
-              if (riskLevel !== "critical") riskLevel = "high";
+              if ((riskLevel as string) !== "critical") riskLevel = "high";
             }
           }
         }

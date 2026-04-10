@@ -789,28 +789,20 @@ export async function handleToolCall(
     const evaluatorModel = (args.evaluatorModel as string) ?? DEFAULT_EVALUATOR_MODEL;
 
     const scanOptions: Parameters<typeof runSecurityScan>[1] = {
-      apiKey: OPENROUTER_API_KEY,
+      ...(mode === "dual"
+        ? { enableDualMode: true }
+        : { scanMode: mode as "extraction" | "injection", enableDualMode: false }),
       maxTurns,
       attackerModel,
       targetModel,
       evaluatorModel,
     };
-    if (mode === "dual") {
-      scanOptions.enableDualMode = true;
-    } else if (mode === "extraction") {
-      scanOptions.scanMode = "extraction";
-      scanOptions.enableDualMode = false;
-    } else if (mode === "injection") {
-      scanOptions.scanMode = "injection";
-      scanOptions.enableDualMode = false;
-    }
-    scanOptions.onProgress = async (_turn: number, _max: number) => {};
     try {
       const result = await runSecurityScan(args.systemPrompt as string, scanOptions);
 
       let scanId: string | undefined;
       try {
-        scanId = saveScan(result as Record<string, unknown>, args.systemPrompt as string);
+        scanId = saveScan(result as unknown as Record<string, unknown>, args.systemPrompt as string);
       } catch {
         // History save failure must not break the scan response
       }
@@ -1009,7 +1001,6 @@ export async function handleToolCall(
       const result = await runRedTeam(args.systemPrompt as string, {
         strategy: strategy as "blitz" | "thorough" | "stealth" | "goal-hijack",
         maxPhases: args.maxPhases as number | undefined,
-        apiKey: OPENROUTER_API_KEY as string,
         attackerModel: args.attackerModel as string | undefined,
         targetModel: args.targetModel as string | undefined,
         evaluatorModel: args.evaluatorModel as string | undefined,
@@ -1271,7 +1262,6 @@ export async function handleToolCall(
         sensitivePatterns: args.sensitivePatterns as string[] | undefined,
         attackerModel: args.attackerModel as string | undefined,
         evaluatorModel: args.evaluatorModel as string | undefined,
-        apiKey: OPENROUTER_API_KEY as string,
       });
       return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
     } catch (err) {

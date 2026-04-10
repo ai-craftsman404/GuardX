@@ -242,13 +242,10 @@ export async function testMultimodalInjection(
     try {
       const probePrompt = `${systemPrompt}\n\n[IMAGE ATTACHED: ${payload.description}]\n[IMAGE DATA: ${payload.imageDataUrl.slice(0, 100)}...]`;
       const result = (await runSecurityScan(probePrompt, {
-        apiKey,
         maxTurns: 5,
         targetModel,
-        enableDualMode: false,
-        scanMode: "extraction",
-        onProgress: async () => {},
-      })) as Record<string, unknown>;
+        mode: "extraction",
+      })) as unknown as Record<string, unknown>;
 
       const resultFindings = Array.isArray(result.findings) ? result.findings : [];
       if (resultFindings.length > 0) {

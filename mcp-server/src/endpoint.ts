@@ -86,7 +86,7 @@ export async function scanEndpoint(
   for (const probe of probes.slice(0, options.maxTurns ?? 15)) {
     try {
       const probeText = typeof probe === "object" && probe !== null
-        ? (probe as Record<string, unknown>).prompt as string ?? String(probe)
+        ? ((probe as unknown) as Record<string, unknown>).prompt as string ?? String(probe)
         : String(probe);
       const response = await sendProbeToEndpoint(probeText, config);
       responses.push({ probe: probeText, response });
@@ -103,17 +103,12 @@ export async function scanEndpoint(
   const scanResult = await runSecurityScan(
     `[Endpoint scan context — evaluate these probe/response pairs for leakage]\n${syntheticContext}`,
     {
-      apiKey: options.apiKey,
       attackerModel: options.attackerModel,
       evaluatorModel: options.evaluatorModel,
       maxTurns: options.maxTurns ?? 15,
-      enableDualMode: options.mode === "dual" || options.mode === undefined,
-      scanMode: options.mode === "extraction" ? "extraction"
-        : options.mode === "injection" ? "injection"
-        : undefined,
-      onProgress: async (_turn: number, _max: number) => {},
+      mode: options.mode ?? "dual",
     }
-  ) as Record<string, unknown>;
+  ) as unknown as Record<string, unknown>;
 
   return {
     ...scanResult,
