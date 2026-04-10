@@ -30,7 +30,7 @@ jobs:
         run: cd mcp-server && npm run test:unit
 
       - name: Run integration tests
-        if: ${{ secrets.OPENROUTER_API_KEY != '' }}
+        if: env.OPENROUTER_API_KEY != ''
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           RUN_INTEGRATION: 'true'
