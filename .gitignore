@@ -5,3 +5,9 @@ dist/
 mcp-server/.guardx/
 *.js.map
 coverage/
+
+# Internal planning docs — keep locally, never push
+PLAN.md
+PHASE*_SCOPE.md
+HANDOVER_*.md
+IMPROVEMENTS_PLAN.md
