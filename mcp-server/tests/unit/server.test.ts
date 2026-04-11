@@ -193,10 +193,17 @@ describe("GuardX MCP Server — unit tests", () => {
     expect(mockGetAllProbes).not.toHaveBeenCalled();
   });
 
-  it("missing OPENROUTER_API_KEY throws descriptive startup error", async () => {
+  it("missing OPENROUTER_API_KEY returns descriptive error when tool needs API key", async () => {
     delete process.env.OPENROUTER_API_KEY;
     vi.resetModules();
-    await expect(import("../../src/server.js")).rejects.toThrow(/OPENROUTER_API_KEY/);
+    const mod = await import("../../src/server.js");
+    const result = await mod.handleToolCall("scan_endpoint", {
+      url: "http://example.com",
+      requestTemplate: '{"prompt":"test"}',
+    });
+    expect(result.isError).toBe(true);
+    const body = JSON.parse(result.content[0].text);
+    expect(body.error).toMatch(/OPENROUTER_API_KEY/);
   });
 
   // U1 — list_techniques returns allDocumentedTechniques

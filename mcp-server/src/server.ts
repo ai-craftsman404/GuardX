@@ -24,14 +24,18 @@ import { testAgentEscalation } from "./agentescalation.js";
 import { scanSupplyChain } from "./supplychain.js";
 import { simulatePromptwareKillchain } from "./promptware.js";
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-if (!OPENROUTER_API_KEY) {
-  throw new Error(
-    "Missing required environment variable: OPENROUTER_API_KEY\n" +
-      "Set it in your .env file or shell environment before starting the GuardX MCP server.\n" +
-      "See .env.example for the required format."
-  );
+function getApiKey(): string {
+  const key = process.env.OPENROUTER_API_KEY;
+  if (!key) {
+    throw new Error(
+      "Missing required environment variable: OPENROUTER_API_KEY\n" +
+        "Set it in your .env file or shell environment before starting the GuardX MCP server.\n" +
+        "See .env.example for the required format."
+    );
+  }
+  return key;
 }
+
 
 const DEFAULT_ATTACKER_MODEL = "anthropic/claude-sonnet-4.6";
 const DEFAULT_TARGET_MODEL = "anthropic/claude-sonnet-4.6";
@@ -1102,7 +1106,7 @@ export async function handleToolCall(
         {
           mode: args.mode as "extraction" | "injection" | "dual" | undefined,
           maxTurns: args.maxTurns as number | undefined,
-          apiKey: OPENROUTER_API_KEY as string,
+          apiKey: getApiKey(),
           attackerModel: args.attackerModel as string | undefined,
           evaluatorModel: args.evaluatorModel as string | undefined,
         }
@@ -1171,7 +1175,7 @@ export async function handleToolCall(
         {
           targetDataPatterns: args.targetDataPatterns as string[] | undefined,
           maxTurns: args.maxTurns as number | undefined,
-          apiKey: OPENROUTER_API_KEY as string,
+          apiKey: getApiKey(),
         }
       );
       return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
@@ -1203,7 +1207,7 @@ export async function handleToolCall(
         args.targetModel as string,
         {
           injectionStyles: args.injectionStyles as Parameters<typeof testMultimodalInjection>[2] extends { injectionStyles?: infer S } ? S : undefined,
-          apiKey: OPENROUTER_API_KEY as string,
+          apiKey: getApiKey(),
         }
       );
       return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
@@ -1230,7 +1234,7 @@ export async function handleToolCall(
         attackerModel: args.attackerModel as string | undefined,
         evaluatorModel: args.evaluatorModel as string | undefined,
         maxAttemptsPerTechnique: args.maxAttemptsPerTechnique as number | undefined,
-        apiKey: OPENROUTER_API_KEY as string,
+        apiKey: getApiKey(),
       });
       return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
     } catch (err) {
@@ -1348,7 +1352,7 @@ export async function handleToolCall(
         targetModel: args.targetModel as string | undefined,
         evaluatorModel: args.evaluatorModel as string | undefined,
         maxDocumentsPerAttack: args.maxDocumentsPerAttack as number | undefined,
-        apiKey: OPENROUTER_API_KEY as string,
+        apiKey: getApiKey(),
       });
       return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
     } catch (err) {
@@ -1381,7 +1385,7 @@ export async function handleToolCall(
         attackerModel: args.attackerModel as string | undefined,
         evaluatorModel: args.evaluatorModel as string | undefined,
         maxChainDepth: args.maxChainDepth as number | undefined,
-        apiKey: OPENROUTER_API_KEY as string,
+        apiKey: getApiKey(),
       });
       return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
     } catch (err) {
@@ -1408,7 +1412,7 @@ export async function handleToolCall(
         checkCves: args.checkCves as boolean | undefined,
         checkSecrets: args.checkSecrets as boolean | undefined,
         checkBackdoors: args.checkBackdoors as boolean | undefined,
-        apiKey: OPENROUTER_API_KEY as string,
+        apiKey: getApiKey(),
       });
       return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
     } catch (err) {
