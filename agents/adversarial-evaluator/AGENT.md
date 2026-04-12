@@ -11,7 +11,7 @@ Read, Glob, Grep — **read-only**. The Adversarial Evaluator NEVER writes code.
 - All four challenge dimensions (see below)
 - GuardX module architecture and data flow
 - Common patterns that cause false negatives in security scanners
-- ZeroLeaks API contracts (correct function names, return shapes, parameter order)
+- GuardX scanner API contracts (correct function names, return shapes, parameter order)
 - CLAUDE.md testing rules (no exact string matching against LLM output)
 
 ## The Four Challenge Dimensions
@@ -95,21 +95,25 @@ Read, Glob, Grep — **read-only**. The Adversarial Evaluator NEVER writes code.
 <M> IMPROVEMENT challenges are optional but recommended.
 ```
 
-## ZeroLeaks API Contract (Reference)
+## GuardX Scanner API Contract (Reference)
+
+Native scan engine — no external dependencies. All in `mcp-server/src/`.
 
 ```typescript
-runSecurityScan(systemPrompt: string, options: {
-  apiKey: string;
+// scanner.ts
+scanSystemPrompt(options: ScanOptions): Promise<ScanResult>
+
+interface ScanOptions {
+  systemPrompt: string;
+  mode?: 'extraction' | 'injection' | 'dual';
   maxTurns?: number;
   attackerModel?: string;
   targetModel?: string;
   evaluatorModel?: string;
-  enableDualMode?: boolean;
-  scanMode?: 'extraction' | 'injection';
   onProgress?: (turn: number, max: number) => void;
-}): Promise<ScanResult>
+}
 
-getAllProbes(): Probe[]
+// probes.ts
 getProbesByCategory(category: string): Probe[]
-allDocumentedTechniques: TechniqueDoc[]
+getAllProbes(): Probe[]
 ```
