@@ -1,5 +1,7 @@
 # GuardX
 
+[![GuardX CI](https://github.com/ai-craftsman404/GuardX/actions/workflows/guardx-ci.yml/badge.svg)](https://github.com/ai-craftsman404/GuardX/actions/workflows/guardx-ci.yml)
+
 LLM security scanner as a Claude Code plugin with native scanning engine.
 
 Scan AI system prompts for prompt injection and extraction vulnerabilities directly from Claude Code. Get structured findings with severity ratings, defense fingerprints, and remediation advice, all interpreted inline.
@@ -90,6 +92,8 @@ GitHub Actions runs on every push to `main` and every PR:
 - Unit tests always run
 - Integration tests run only when `OPENROUTER_API_KEY` is set as a repository secret
 - A test summary comment is posted to every PR
+
+Note: the workflow triggers on `main` and `master` to match the repo default branch.
 
 Set the secret: **Settings → Secrets and variables → Actions → `OPENROUTER_API_KEY`**
 
