@@ -2,7 +2,9 @@
 
 [![GuardX CI](https://github.com/ai-craftsman404/GuardX/actions/workflows/guardx-ci.yml/badge.svg)](https://github.com/ai-craftsman404/GuardX/actions/workflows/guardx-ci.yml)
 
-LLM security scanner as a Claude Code plugin with native scanning engine.
+GuardX catches prompt injection and extraction risk in AI system prompts before they reach production.
+
+**Proof links:** [Release v0.1.0](https://github.com/ai-craftsman404/GuardX/releases/tag/v0.1.0) · [Demo/Usage](#quick-start) · [Architecture](#directory-structure)
 
 Scan AI system prompts for prompt injection and extraction vulnerabilities directly from Claude Code. Get structured findings with severity ratings, defense fingerprints, and remediation advice, all interpreted inline.
 
