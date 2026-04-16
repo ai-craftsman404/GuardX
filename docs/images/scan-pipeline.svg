@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 170" width="1200" height="170">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+      <stop offset="0%" stop-color="#050d1a"/>
+      <stop offset="100%" stop-color="#0d1f35"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="170" fill="url(#bg)"/>
+
+  <!-- ─── Box 1: System Prompt (x=90) ─────────────────────── -->
+  <rect x="90" y="35" width="180" height="90" rx="6" fill="#0a1628" stroke="#1e3a5f" stroke-width="1.5"/>
+  <rect x="90" y="35" width="180" height="3"  rx="2" fill="#22d3ee"/>
+  <text x="180" y="70" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"
+        font-size="13" font-weight="600" text-anchor="middle" fill="#e2e8f0">System Prompt</text>
+  <text x="180" y="90" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"
+        font-size="11" text-anchor="middle" fill="#4b7194">Input text to scan</text>
+
+  <!-- Arrow 1 -->
+  <line x1="272" y1="80" x2="295" y2="80" stroke="#1e3a5f" stroke-width="2"/>
+  <polygon points="295,75 305,80 295,85" fill="#1e3a5f"/>
+
+  <!-- ─── Box 2: Dual Analysis (x=306) ─────────────────────── -->
+  <rect x="306" y="35" width="180" height="90" rx="6" fill="#0a1628" stroke="#1e3a5f" stroke-width="1.5"/>
+  <rect x="306" y="35" width="180" height="3"  rx="2" fill="#06b6d4"/>
+  <text x="396" y="70" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"
+        font-size="13" font-weight="600" text-anchor="middle" fill="#e2e8f0">Dual Analysis</text>
+  <text x="396" y="88" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"
+        font-size="11" text-anchor="middle" fill="#4b7194">Extraction mode</text>
+  <text x="396" y="104" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"
+        font-size="11" text-anchor="middle" fill="#4b7194">Injection mode</text>
+
+  <!-- Arrow 2 -->
+  <line x1="488" y1="80" x2="511" y2="80" stroke="#1e3a5f" stroke-width="2"/>
+  <polygon points="511,75 521,80 511,85" fill="#1e3a5f"/>
+
+  <!-- ─── Box 3: 18 Probes (x=522) ─────────────────────────── -->
+  <rect x="522" y="35" width="180" height="90" rx="6" fill="#0a1628" stroke="#1e3a5f" stroke-width="1.5"/>
+  <rect x="522" y="35" width="180" height="3"  rx="2" fill="#7c3aed"/>
+  <text x="612" y="70" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"
+        font-size="13" font-weight="600" text-anchor="middle" fill="#e2e8f0">18 Probe</text>
+  <text x="612" y="86" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"
+        font-size="13" font-weight="600" text-anchor="middle" fill="#e2e8f0">Categories</text>
+  <text x="612" y="106" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"
+        font-size="11" text-anchor="middle" fill="#4b7194">Attack probe library</text>
+
+  <!-- Arrow 3 -->
+  <line x1="704" y1="80" x2="727" y2="80" stroke="#1e3a5f" stroke-width="2"/>
+  <polygon points="727,75 737,80 727,85" fill="#1e3a5f"/>
+
+  <!-- ─── Box 4: Score (x=738) ──────────────────────────────── -->
+  <rect x="738" y="35" width="180" height="90" rx="6" fill="#0a1628" stroke="#1e3a5f" stroke-width="1.5"/>
+  <rect x="738" y="35" width="180" height="3"  rx="2" fill="#a855f7"/>
+  <text x="828" y="70" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"
+        font-size="13" font-weight="600" text-anchor="middle" fill="#e2e8f0">Score &amp;</text>
+  <text x="828" y="86" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"
+        font-size="13" font-weight="600" text-anchor="middle" fill="#e2e8f0">Classify</text>
+  <text x="828" y="106" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"
+        font-size="11" text-anchor="middle" fill="#4b7194">Critical → Low severity</text>
+
+  <!-- Arrow 4 -->
+  <line x1="920" y1="80" x2="943" y2="80" stroke="#1e3a5f" stroke-width="2"/>
+  <polygon points="943,75 953,80 943,85" fill="#1e3a5f"/>
+
+  <!-- ─── Box 5: Report (x=954) ─────────────────────────────── -->
+  <rect x="954" y="35" width="180" height="90" rx="6" fill="#0a1628" stroke="#1e3a5f" stroke-width="1.5"/>
+  <rect x="954" y="35" width="180" height="3"  rx="2" fill="#22d3ee"/>
+  <text x="1044" y="70" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"
+        font-size="13" font-weight="600" text-anchor="middle" fill="#e2e8f0">Findings</text>
+  <text x="1044" y="86" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"
+        font-size="13" font-weight="600" text-anchor="middle" fill="#e2e8f0">Report</text>
+  <text x="1044" y="106" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif"
+        font-size="11" text-anchor="middle" fill="#4b7194">Inline remediation</text>
+</svg>
