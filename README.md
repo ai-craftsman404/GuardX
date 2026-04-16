@@ -1,12 +1,28 @@
+<div align="center">
+
+<img src="docs/images/1776347441007a.png" alt="GuardX — LLM Security Scanner" width="100%"/>
+
 # GuardX
 
+### Catch prompt injection and extraction risks before they reach production.
+
 [![GuardX CI](https://github.com/ai-craftsman404/GuardX/actions/workflows/guardx-ci.yml/badge.svg)](https://github.com/ai-craftsman404/GuardX/actions/workflows/guardx-ci.yml)
+[![Node.js 20+](https://img.shields.io/badge/Node.js-20%2B-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-Plugin-22d3ee?style=flat-square)](https://claude.ai/code)
+[![18 Probe Categories](https://img.shields.io/badge/Attack%20Probes-18%20Categories-7c3aed?style=flat-square)](#attack-coverage--18-probe-categories)
 
-GuardX catches prompt injection and extraction risk in AI system prompts before they reach production.
+[**Quick Start**](#quick-start) · [**How It Works**](#how-it-works) · [**Skills**](#skills) · [**Attack Coverage**](#attack-coverage--18-probe-categories) · [**MCP Tools**](#mcp-tools)
 
-**Proof links:** [Release v0.1.0](https://github.com/ai-craftsman404/GuardX/releases/tag/v0.1.0) · [Demo/Usage](#quick-start) · [Architecture](#directory-structure)
+</div>
 
-Scan AI system prompts for prompt injection and extraction vulnerabilities directly from Claude Code. Get structured findings with severity ratings, defense fingerprints, and remediation advice, all interpreted inline.
+---
+
+## The Problem
+
+Building AI applications means writing system prompts — but system prompts are attack surfaces. Prompt injection, data extraction, and jailbreak attacks can compromise your AI's behaviour, leak confidential instructions, or redirect it entirely.
+
+**GuardX closes the gap between writing a prompt and shipping it.** Scan directly inside Claude Code, get severity-rated findings with defense fingerprints and remediation steps, all inline — no external tooling required.
 
 ---
 
@@ -33,13 +49,29 @@ cp .env.example .env
 
 ### 4. Load the plugin in Claude Code
 
-Open Claude Code in the GuardX directory:
-
 ```bash
 claude --plugin-dir .
 ```
 
 The `guardx` MCP server starts automatically via `.mcp.json`. Verify with `/help` — you should see `/guardx:scan`, `/guardx:interpret`, and `/guardx:probes`.
+
+---
+
+## How It Works
+
+<div align="center">
+<img src="docs/images/scan-pipeline.svg" alt="GuardX Scan Pipeline: System Prompt → Dual Analysis → 18 Probe Categories → Score &amp; Classify → Findings Report" width="95%"/>
+</div>
+
+<br>
+
+| Step | What happens |
+|------|-------------|
+| **1. System Prompt** | Paste your prompt directly or provide a file path |
+| **2. Dual Analysis** | Two scan modes run in parallel: extraction probing and injection probing |
+| **3. 18 Probe Categories** | The native scanning engine runs the full attack probe library against your prompt |
+| **4. Score & Classify** | Each finding is rated Critical · High · Medium · Low with a defense fingerprint |
+| **5. Findings Report** | Results group by severity with inline remediation advice, interpreted by Claude |
 
 ---
 
@@ -56,13 +88,25 @@ Browse the full attack probe catalogue — 18 categories explained in plain lang
 
 ---
 
+## Attack Coverage — 18 Probe Categories
+
+<div align="center">
+<img src="docs/images/probe-grid.svg" alt="GuardX 18 probe categories: Prompt Injection, Prompt Extraction, Jailbreak, Role Confusion, Instruction Override, Context Manipulation, Delimiter Injection, Encoding Bypass, Indirect Injection, Tool Exploit, Memory Poisoning, Goal Hijack, Persona Attack, Multi-Turn Escalation, Social Engineering, Output Manipulation, Data Exfiltration, Privilege Escalation" width="100%"/>
+</div>
+
+<br>
+
+Each probe category maps to documented adversarial techniques and fires a set of targeted test payloads during a scan. Use `/guardx:probes` to browse the full catalogue with plain-language descriptions.
+
+---
+
 ## MCP Tools
 
 The MCP server exposes 4 tools directly usable from Claude:
 
 | Tool | Description |
-|---|---|
-| `scan_system_prompt` | Full vulnerability scan — returns findings, ratings, defense profile |
+|------|-------------|
+| `scan_system_prompt` | Full vulnerability scan — returns findings, severity ratings, defense profile |
 | `list_probes` | Browse probes, optionally filtered by attack category |
 | `list_techniques` | Documented attack techniques knowledge base |
 | `get_scan_config` | Available models and scan defaults |
@@ -89,7 +133,7 @@ RUN_INTEGRATION=true npm run test:integration
 
 ## CI/CD
 
-GitHub Actions runs on every push to `main` and every PR:
+GitHub Actions runs on every push to `master` and every PR:
 
 - Unit tests always run
 - Integration tests run only when `OPENROUTER_API_KEY` is set as a repository secret
@@ -119,6 +163,7 @@ GuardX/
 │   ├── interpret/SKILL.md         # /guardx:interpret
 │   └── probes/SKILL.md            # /guardx:probes
 ├── agents/security-scanner/       # Specialist security agent
+├── docs/images/                   # README visual assets
 ├── .github/workflows/guardx-ci.yml
 ├── .mcp.json                      # Wires Claude Code to MCP server
 └── .env.example
@@ -129,8 +174,20 @@ GuardX/
 ## Roadmap
 
 | Phase | Scope |
-|---|---|
+|-------|-------|
 | **MVP** (current) | MCP server + core scan skill + basic result output |
 | **Phase 2** | Scan history, HTML/SARIF reports, auto-scan hook, specialist agent |
 | **Phase 3** | Canary tokens, agentic red teaming, OWASP/NIST mapping, adaptive guardrails, HTTP endpoint targeting |
 | **Phase 4** | Deep tool-call exfiltration testing, multi-modal injection, custom HTTP adapters, JUnit XML + SARIF CI/CD formats, differential scanning |
+
+---
+
+<div align="center">
+
+<img src="docs/images/footer-banner.svg" alt="" width="100%"/>
+
+[Claude Code Docs](https://docs.anthropic.com/claude/docs) · [MCP Protocol](https://modelcontextprotocol.io/) · [Issues](https://github.com/ai-craftsman404/GuardX/issues) · [Releases](https://github.com/ai-craftsman404/GuardX/releases)
+
+*Made with precision*
+
+</div>
