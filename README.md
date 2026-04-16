@@ -57,6 +57,14 @@ The `guardx` MCP server starts automatically via `.mcp.json`. Verify with `/help
 
 ---
 
+## Demo
+
+<div align="center">
+<img src="docs/images/demo.gif" alt="GuardX demo — scanning a vulnerable system prompt" width="95%"/>
+</div>
+
+---
+
 ## How It Works
 
 <div align="center">
