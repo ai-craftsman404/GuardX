@@ -11,6 +11,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-Plugin-22d3ee?style=flat-square)](https://claude.ai/code)
 [![18 Probe Categories](https://img.shields.io/badge/Attack%20Probes-18%20Categories-7c3aed?style=flat-square)](#attack-coverage--18-probe-categories)
+[![License: MIT](https://img.shields.io/badge/License-MIT-22d3ee?style=flat-square)](LICENSE)
 
 [**Quick Start**](#quick-start) · [**How It Works**](#how-it-works) · [**Skills**](#skills) · [**Attack Coverage**](#attack-coverage--18-probe-categories) · [**MCP Tools**](#mcp-tools)
 
