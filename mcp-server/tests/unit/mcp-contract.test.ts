@@ -135,9 +135,9 @@ afterEach(async () => {
 });
 
 describe("MCP protocol contract", () => {
-  it("listTools returns exactly 27 tools", async () => {
+  it("listTools returns exactly 33 tools", async () => {
     const result = await client.listTools();
-    expect(result.tools.length).toBe(27);
+    expect(result.tools.length).toBe(33);
   });
 
   it("listTools — every tool has name, description, and inputSchema", async () => {

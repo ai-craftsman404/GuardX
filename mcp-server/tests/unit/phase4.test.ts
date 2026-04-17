@@ -151,7 +151,7 @@ describe("phase4 — tool registration", () => {
 
   it("total tool count is 27", async () => {
     const { TOOL_DEFINITIONS } = await getServerModule();
-    expect(TOOL_DEFINITIONS).toHaveLength(27);
+    expect(TOOL_DEFINITIONS).toHaveLength(33);
   });
 
   it("diff_scans tool has correct input schema with baselineScanId required", async () => {
