@@ -111,7 +111,7 @@ Each probe category maps to documented adversarial techniques and fires a set of
 
 ## MCP Tools
 
-The MCP server exposes 4 tools directly usable from Claude:
+The MCP server exposes 27 tools directly usable from Claude:
 
 | Tool | Description |
 |------|-------------|
@@ -160,7 +160,7 @@ Set the secret: **Settings → Secrets and variables → Actions → `OPENROUTER
 GuardX/
 ├── .claude-plugin/plugin.json     # Plugin manifest
 ├── mcp-server/
-│   ├── src/server.ts              # MCP server — 4 tools
+│   ├── src/server.ts              # MCP server — 27 tools
 │   ├── tests/
 │   │   ├── fixtures/              # AutoGPT system prompt fixtures
 │   │   ├── unit/                  # Unit tests (mocked native scanner)
@@ -184,10 +184,13 @@ GuardX/
 
 | Phase | Scope |
 |-------|-------|
-| **MVP** (current) | MCP server + core scan skill + basic result output |
+| **MVP** | MCP server + core scan skill + basic result output |
 | **Phase 2** | Scan history, HTML/SARIF reports, auto-scan hook, specialist agent |
 | **Phase 3** | Canary tokens, agentic red teaming, OWASP/NIST mapping, adaptive guardrails, HTTP endpoint targeting |
 | **Phase 4** | Deep tool-call exfiltration testing, multi-modal injection, custom HTTP adapters, JUnit XML + SARIF CI/CD formats, differential scanning |
+| **Phase 5** | Extended probes, MCP security, scheduler, PDF reports, agentic compliance |
+| **Phase 6** | Promptware kill chain, supply chain scan, RAG security, agent escalation, multimodal injection |
+| **Phase 7** (current) | Native scan engine (ZeroLeaks removed), MCP deep audit, extended encoding probes |
 
 ---
 
