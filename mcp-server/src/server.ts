@@ -23,6 +23,12 @@ import { testRagSecurity } from "./rag.js";
 import { testAgentEscalation } from "./agentescalation.js";
 import { scanSupplyChain } from "./supplychain.js";
 import { simulatePromptwareKillchain } from "./promptware.js";
+import { testDataPoisoning } from "./poisoning.js";
+import { testAgentChain } from "./agentchain.js";
+import { testCrossProviderConsistency } from "./crossprovider.js";
+import { generateAuditReport } from "./audit-report.js";
+import { generateTrendDashboard } from "./dashboard.js";
+import { trackJailbreakFeed } from "./jailbreakfeed.js";
 
 function getApiKey(): string {
   const key = process.env.OPENROUTER_API_KEY;
@@ -773,6 +779,84 @@ export const TOOL_DEFINITIONS = [
       required: ["systemPrompt", "availableTools"],
     },
   },
+  {
+    name: "test_data_poisoning",
+    description:
+      "Test training data for poisoning attacks including character substitution, adversarial examples, data integrity issues, and backdoors. Returns risk assessment and detected poisoning patterns.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        data: {
+          type: "string",
+          description: "Training data or text to analyze for poisoning attacks.",
+        },
+      },
+      required: ["data"],
+    },
+  },
+  {
+    name: "test_agent_chain",
+    description:
+      "Test agent chain architectures for token passing attacks, message injection, privilege escalation, and trust boundary violations. Evaluates multi-agent system security.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        chain: {
+          type: "string",
+          description: "Description of agent chain interactions to analyze.",
+        },
+      },
+      required: ["chain"],
+    },
+  },
+  {
+    name: "test_cross_provider_consistency",
+    description:
+      "Test response consistency across multiple LLM providers to detect jailbreak vulnerabilities that work on some providers but not others.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        responses: {
+          type: "object",
+          description: "Provider responses object with isSafe boolean values.",
+        },
+      },
+      required: ["responses"],
+    },
+  },
+  {
+    name: "generate_audit_report",
+    description:
+      "Export security audit findings in JSON, CSV, or PDF format for compliance and reporting.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        format: {
+          type: "string",
+          enum: ["json", "csv", "pdf"],
+          description: "Export format (default: json).",
+        },
+      },
+    },
+  },
+  {
+    name: "generate_trend_dashboard",
+    description:
+      "Generate dashboard showing vulnerability trends over time and top security risks.",
+    inputSchema: {
+      type: "object",
+      properties: {},
+    },
+  },
+  {
+    name: "track_jailbreak_feed",
+    description:
+      "Track latest jailbreak techniques, success rates, and discovery dates from the security research community.",
+    inputSchema: {
+      type: "object",
+      properties: {},
+    },
+  },
 ];
 
 export async function handleToolCall(
@@ -1480,12 +1564,109 @@ export async function handleToolCall(
     }
   }
 
+  if (name === "test_data_poisoning") {
+    if (!args?.data || typeof args.data !== "string" || !args.data.trim()) {
+      return {
+        content: [{ type: "text", text: JSON.stringify({ error: "Missing required parameter: data must be a non-empty string." }) }],
+        isError: true,
+      };
+    }
+    try {
+      const result = testDataPoisoning(args.data as string);
+      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return {
+        content: [{ type: "text", text: JSON.stringify({ error: `Data poisoning test failed: ${message}` }) }],
+        isError: true,
+      };
+    }
+  }
+
+  if (name === "test_agent_chain") {
+    if (!args?.chain || typeof args.chain !== "string") {
+      return {
+        content: [{ type: "text", text: JSON.stringify({ error: "Missing required parameter: chain" }) }],
+        isError: true,
+      };
+    }
+    try {
+      const result = testAgentChain(args.chain as string);
+      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return {
+        content: [{ type: "text", text: JSON.stringify({ error: `Agent chain test failed: ${message}` }) }],
+        isError: true,
+      };
+    }
+  }
+
+  if (name === "test_cross_provider_consistency") {
+    if (!args?.responses || typeof args.responses !== "object") {
+      return {
+        content: [{ type: "text", text: JSON.stringify({ error: "Missing required parameter: responses object" }) }],
+        isError: true,
+      };
+    }
+    try {
+      const result = testCrossProviderConsistency(args.responses as Record<string, { response: string; isSafe: boolean }>);
+      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return {
+        content: [{ type: "text", text: JSON.stringify({ error: `Cross-provider test failed: ${message}` }) }],
+        isError: true,
+      };
+    }
+  }
+
+  if (name === "generate_audit_report") {
+    try {
+      const format = (args?.format as string) || "json";
+      const result = generateAuditReport([], format as "json" | "csv" | "pdf");
+      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return {
+        content: [{ type: "text", text: JSON.stringify({ error: `Audit report generation failed: ${message}` }) }],
+        isError: true,
+      };
+    }
+  }
+
+  if (name === "generate_trend_dashboard") {
+    try {
+      const result = generateTrendDashboard([]);
+      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return {
+        content: [{ type: "text", text: JSON.stringify({ error: `Dashboard generation failed: ${message}` }) }],
+        isError: true,
+      };
+    }
+  }
+
+  if (name === "track_jailbreak_feed") {
+    try {
+      const result = trackJailbreakFeed();
+      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return {
+        content: [{ type: "text", text: JSON.stringify({ error: `Jailbreak feed tracking failed: ${message}` }) }],
+        isError: true,
+      };
+    }
+  }
+
   return { content: [{ type: "text", text: JSON.stringify({ error: `Unknown tool: ${name}` }) }], isError: true };
 }
 
 export function buildServer(): Server {
   const server = new Server(
-    { name: "guardx", version: "7.0.0" },
+    { name: "guardx", version: "8.0.0" },
     { capabilities: { tools: {} } }
   );
 

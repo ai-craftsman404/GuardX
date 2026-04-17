@@ -70,10 +70,10 @@ describe("GuardX MCP Server — unit tests", () => {
     vi.resetModules();
   });
 
-  it("server exposes all 27 tools with correct names", async () => {
+  it("server exposes all 33 tools with correct names", async () => {
     const mod = await import("../../src/server.js");
     const toolNames = mod.TOOL_DEFINITIONS.map((t: { name: string }) => t.name);
-    expect(toolNames).toHaveLength(27);
+    expect(toolNames).toHaveLength(33);
     for (const name of [
       "scan_system_prompt",
       "list_probes",

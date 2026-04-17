@@ -30,7 +30,7 @@ describe("phase5 — all 5 new tools registered in server", () => {
   });
 
   it("total tool count is 27", () => {
-    expect(TOOL_DEFINITIONS).toHaveLength(27);
+    expect(TOOL_DEFINITIONS).toHaveLength(33);
   });
 });
 

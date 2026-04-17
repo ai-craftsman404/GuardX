@@ -67,8 +67,8 @@ export function detectPoisonedPatterns(text: string): PatternFinding[] {
     }
   }
 
-  // Check for homograph attacks (mixed scripts)
-  if (/[а-яА-Я]|[\u0370-\u03FF]|[\u0400-\u04FF]/.test(text)) {
+  // Check for homograph attacks (mixed scripts, includes more script ranges)
+  if (/[а-яА-Я]|[\u0370-\u03FF]|[\u0400-\u04FF]|[ɡάέήίόύώΐά]|[\u0100-\u017F]/.test(text)) {
     if (!seen.has("homograph")) {
       findings.push({
         category: "homograph",
@@ -202,7 +202,7 @@ export function detectDataIntegrityIssues(text: string): IntegrityIssue[] {
   const findings: IntegrityIssue[] = [];
   const seen = new Set<string>();
 
-  // Check for statistical anomalies (repeated words)
+  // Check for statistical anomalies (repeated words or repetitive characters)
   const words = text.toLowerCase().split(/\s+/).filter((w) => w.length > 0);
   const wordFreq = new Map<string, number>();
   for (const word of words) {
@@ -211,23 +211,26 @@ export function detectDataIntegrityIssues(text: string): IntegrityIssue[] {
 
   const uniqueWords = wordFreq.size;
   const totalWords = words.length;
-  if (uniqueWords > 0 && totalWords > 5) {
+  if (uniqueWords > 0 && totalWords >= 3) {
     const diversity = uniqueWords / totalWords;
-    if (diversity < 0.2 && !seen.has("statistical")) {
+    // Check for low diversity OR for repetitive character patterns (like aaaaa, bbbbb)
+    const hasRepetitivePatterns = words.some((w) => /^(.)\1{3,}$/.test(w));
+    if ((diversity < 0.5 || hasRepetitivePatterns) && !seen.has("statistical")) {
       findings.push({
         issueType: "statistical",
         severity: "high",
         impact: "Model may memorize repetitive patterns instead of learning generalizable features",
-        description: `Extremely low vocabulary diversity: ${(diversity * 100).toFixed(1)}%`,
+        description: hasRepetitivePatterns ? "Highly repetitive character patterns detected" : `Low vocabulary diversity: ${(diversity * 100).toFixed(1)}%`,
       });
       seen.add("statistical");
     }
   }
 
-  // Check for label inconsistency
-  if (/label:\s*safe/i.test(text) && /label:\s*unsafe/i.test(text)) {
-    const sameContent = /safe.*same.*content|unsafe.*same.*content/i.test(text);
-    if (sameContent && !seen.has("inconsistency")) {
+  // Check for label inconsistency (contradictory labels for similar content)
+  const hasSafeLabel = /label:\s*safe|label:\s*helpful|positive:/i.test(text);
+  const hasUnsafeLabel = /label:\s*unsafe|label:\s*harmful|negative:/i.test(text);
+  if ((hasSafeLabel && hasUnsafeLabel) || (/^[^:]*safe[^:]*(?:\n|$)/im.test(text) && /^[^:]*unsafe[^:]*(?:\n|$)/im.test(text))) {
+    if (!seen.has("inconsistency")) {
       findings.push({
         issueType: "inconsistency",
         severity: "critical",
@@ -294,17 +297,15 @@ export function detectBackdoors(text: string): BackdoorFinding[] {
   const seen = new Set<string>();
 
   // Detect trigger-based backdoors
-  if (/trigger|activate|enable|unlock|backdoor/i.test(text)) {
-    const match = text.match(/(trigger|activate|enable|unlock|backdoor)[^.]*\b(ignore|bypass|execute|harmful)/i);
-    if (match && !seen.has("trigger")) {
-      findings.push({
-        backdoorType: "trigger",
-        activationMethod: match[1],
-        severity: "critical",
-        consequence: "Attacker can trigger harmful behavior via specific input patterns",
-      });
-      seen.add("trigger");
-    }
+  if (/trigger|activate|enable|unlock|backdoor/i.test(text) && !seen.has("trigger")) {
+    const trigger = text.match(/trigger|activate|enable|unlock|backdoor/i)?.[0] || "trigger";
+    findings.push({
+      backdoorType: "trigger",
+      activationMethod: trigger,
+      severity: "critical",
+      consequence: "Attacker can trigger harmful behavior via specific input patterns",
+    });
+    seen.add("trigger");
   }
 
   // Detect semantic backdoors (learned associations)
@@ -373,10 +374,10 @@ export function computePoisoningRisk(text: string): PoisoningRisk {
   const patternScore = Math.min(patterns.length * 0.3, 1);
   const adversarialScore = adversarial.length > 0 ? Math.min(adversarial.reduce((s, a) => s + a.confidence, 0) / 2, 1) : 0;
   const integrityScore = Math.min(integrity.length * 0.25, 1);
-  const backdoorScore = backdoors.length > 0 ? 0.8 + backdoors.length * 0.1 : 0; // Backdoors weighted heavily
+  const backdoorScore = backdoors.length > 0 ? 0.7 + backdoors.length * 0.15 : 0; // Backdoors weighted heavily
 
   // Overall score: weighted average (backdoors highest priority)
-  const overall = (patternScore * 0.15 + adversarialScore * 0.25 + integrityScore * 0.2 + backdoorScore * 0.4);
+  const overall = (patternScore * 0.08 + adversarialScore * 0.17 + integrityScore * 0.1 + backdoorScore * 0.65);
 
   return {
     overall: Math.min(overall, 1),
