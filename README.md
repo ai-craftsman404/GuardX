@@ -8,12 +8,12 @@
 
 [![GuardX CI](https://github.com/ai-craftsman404/GuardX/actions/workflows/guardx-ci.yml/badge.svg)](https://github.com/ai-craftsman404/GuardX/actions/workflows/guardx-ci.yml)
 [![Node.js 20+](https://img.shields.io/badge/Node.js-20%2B-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-Plugin-22d3ee?style=flat-square)](https://claude.ai/code)
-[![18 Probe Categories](https://img.shields.io/badge/Attack%20Probes-18%20Categories-7c3aed?style=flat-square)](#attack-coverage--18-probe-categories)
 [![License: MIT](https://img.shields.io/badge/License-MIT-22d3ee?style=flat-square)](LICENSE)
 
-[**Quick Start**](#quick-start) · [**How It Works**](#how-it-works) · [**Skills**](#skills) · [**Attack Coverage**](#attack-coverage--18-probe-categories) · [**MCP Tools**](#mcp-tools)
+`33 MCP tools` · `18 probe categories` · `Dual-mode prompt scanning`
+
+[**Quick Start**](#quick-start) · [**Demo**](#demo) · [**How It Works**](#how-it-works) · [**Attack Coverage**](#attack-coverage--18-probe-categories) · [**Running Tests**](#running-tests)
 
 </div>
 
@@ -64,6 +64,24 @@ The `guardx` MCP server starts automatically via `.mcp.json`. Verify with `/help
 <img src="docs/images/demo.gif" alt="GuardX demo — scanning a vulnerable system prompt" width="95%"/>
 </div>
 
+GuardX runs directly inside Claude Code, scans prompts with extraction and injection probes, and returns structured findings inline with severity and remediation context.
+
+---
+
+## Sample Findings Report
+
+<div align="center">
+<img src="docs/images/readme-report-sample.png" alt="GuardX sample HTML security report with severity-rated findings, defense profile, recommendations, and scan stats" width="92%"/>
+</div>
+
+<div align="center">
+<img src="docs/images/readme-report-pdf-sample.png" alt="GuardX sample PDF security report preview rendered in a document viewer" width="92%"/>
+</div>
+
+Exports: **HTML** · **PDF** · **SARIF** · **JUnit XML**
+
+This sample uses a deliberately vulnerable prompt from [`docs/examples/sample-vulnerable-system-prompt.md`](docs/examples/sample-vulnerable-system-prompt.md) and a synthetic report source in [`docs/examples/readme-report-source.json`](docs/examples/readme-report-source.json). Generated artifacts are included as [HTML](docs/examples/reports/readme-report-sample.html), [PDF](docs/examples/reports/readme-report-sample.pdf), [SARIF](docs/examples/reports/readme-report-sample.sarif), and [JUnit XML](docs/examples/reports/readme-report-sample.xml).
+
 ---
 
 ## How It Works
@@ -94,6 +112,8 @@ Present scan findings grouped by severity with remediation steps. Called automat
 
 ### `/guardx:probes`
 Browse the full attack probe catalogue — 18 categories explained in plain language.
+
+The default flow is simple: scan a prompt, review interpreted findings, then inspect the probe library if you want to understand or extend attack coverage.
 
 ---
 
