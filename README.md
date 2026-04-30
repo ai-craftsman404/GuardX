@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/images/17763508209f02.png" alt="GuardX — LLM Security Scanner" width="100%"/>
+<img src="docs/images/17763508209f02.png" alt="GuardX — LLM Security Scanner" width="760"/>
 
 # GuardX
 
@@ -24,6 +24,18 @@
 Building AI applications means writing system prompts — but system prompts are attack surfaces. Prompt injection, data extraction, and jailbreak attacks can compromise your AI's behaviour, leak confidential instructions, or redirect it entirely.
 
 **GuardX closes the gap between writing a prompt and shipping it.** Scan directly inside Claude Code, get severity-rated findings with defense fingerprints and remediation steps, all inline — no external tooling required.
+
+---
+
+## Goal-Driven Multi-Agent Security
+
+<div align="center">
+<img src="docs/images/goal-driven-multi-agent-security.png" alt="GuardX concept image showing goal-driven multi-agent security assessment across prompt injection, agent chain, MCP audit, and red team paths" width="92%"/>
+</div>
+
+GuardX was conceived as a goal-driven multi-agent security assessment system: not just a single scanner, but a coordinated set of specialist security lenses working toward one objective — expose how an AI system can be redirected, extracted, chained, or abused before it reaches production.
+
+In practice, that means combining prompt injection testing, agent-chain analysis, MCP auditing, and red-team style adversarial probing into one security workflow. The value is not just broader coverage, but more realistic assessment of how modern agentic systems fail across connected surfaces.
 
 ---
 
@@ -211,7 +223,7 @@ GuardX/
 | **Phase 5** | Extended probes, MCP security, scheduler, PDF reports, agentic compliance |
 | **Phase 6** | Promptware kill chain, supply chain scan, RAG security, agent escalation, multimodal injection |
 | **Phase 7** | Native scan engine (ZeroLeaks removed), MCP deep audit, extended encoding probes |
-| **Phase 8** (current) | Data poisoning detection, agent chain security, cross-provider consistency, audit export, trend dashboard, jailbreak feed |
+| **Phase 8** ✅ | Data poisoning detection, agent chain security, cross-provider consistency, audit export, trend dashboard, jailbreak feed — **965 unit tests** |
 
 ---
 
