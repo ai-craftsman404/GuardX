@@ -66,14 +66,23 @@ export function generateHtml(scan: ScanRecord, outputId: string): string {
     .map((f) => {
       const color = SEVERITY_COLOR[f.severity ?? "low"] ?? "#6b7280";
       return `
-    <div class="finding" style="border-left:4px solid ${color};padding:12px 16px;margin:10px 0;background:#f9fafb;border-radius:0 4px 4px 0">
-      <div><strong style="color:${color}">[${esc((f.severity ?? "low").toUpperCase())}]</strong> ${esc(f.technique ?? "")}</div>
-      <div style="font-size:0.85em;color:#6b7280;margin-top:2px">Category: ${esc(f.category ?? "")} &nbsp;|&nbsp; Confidence: ${esc(f.confidence ?? "")}</div>
-      ${f.extractedContent ? `<pre style="margin:8px 0 0;font-size:0.82em;background:#e5e7eb;padding:8px;border-radius:4px;overflow-x:auto;white-space:pre-wrap">${esc(f.extractedContent)}</pre>` : ""}
-      ${f.evidence ? `<div style="margin-top:6px;font-size:0.88em;color:#374151"><em>Evidence:</em> ${esc(f.evidence)}</div>` : ""}
-    </div>`;
+    <article class="finding" style="--accent:${color}">
+      <div class="finding-head">
+        <div class="finding-title">
+          <span class="severity-label">${esc((f.severity ?? "low").toUpperCase())}</span>
+          <strong>${esc(f.technique ?? "")}</strong>
+        </div>
+        <div class="finding-meta">${esc(f.category ?? "unknown")} · confidence ${esc(f.confidence ?? "?")}</div>
+      </div>
+      ${f.extractedContent ? `<div class="finding-block"><div class="block-label">Extracted content</div><pre>${esc(f.extractedContent)}</pre></div>` : ""}
+      ${f.evidence ? `<div class="finding-evidence"><span>Evidence</span>${esc(f.evidence)}</div>` : ""}
+    </article>`;
     })
     .join("\n");
+
+  const cleanProbeBadges = (scan.cleanProbeCategories ?? [])
+    .map((category) => `<span class="chip chip-clean">${esc(category)}</span>`)
+    .join("");
 
   const dp = scan.defenseProfile as Record<string, unknown> | undefined;
   const guardrails = Array.isArray(dp?.guardrails)
@@ -83,12 +92,57 @@ export function generateHtml(scan: ScanRecord, outputId: string): string {
     ? (dp.weaknesses as string[])
     : [];
 
+  const guardrailBadges = guardrails
+    .map((item) => `<span class="chip">${esc(item)}</span>`)
+    .join("");
+
+  const weaknessBadges = weaknesses
+    .map((item) => `<span class="chip chip-risk">${esc(item)}</span>`)
+    .join("");
+
   const recs = (scan.recommendations ?? [])
-    .map((r, i) => `<li style="margin:4px 0">${i + 1}. ${esc(r)}</li>`)
+    .map(
+      (r, i) => `
+      <li>
+        <span class="rec-index">${i + 1}</span>
+        <span>${esc(r)}</span>
+      </li>`
+    )
     .join("\n");
 
   const vulnColor =
     SEVERITY_COLOR[scan.overallVulnerability ?? ""] ?? "#6b7280";
+
+  const stats = [
+    {
+      label: "Vulnerability",
+      value: esc((scan.overallVulnerability ?? "unknown").toUpperCase()),
+      accent: vulnColor,
+    },
+    {
+      label: "Leak status",
+      value: esc(scan.leakStatus ?? "unknown"),
+      accent: "#0f766e",
+    },
+    {
+      label: "Findings",
+      value: String(findings.length),
+      accent: "#1d4ed8",
+    },
+    {
+      label: "Tokens",
+      value: scan.tokensUsed?.toLocaleString() ?? "?",
+      accent: "#7c3aed",
+    },
+  ]
+    .map(
+      (item) => `
+    <div class="stat-card">
+      <div class="stat-label">${item.label}</div>
+      <div class="stat-value" style="color:${item.accent}">${item.value}</div>
+    </div>`
+    )
+    .join("\n");
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -96,53 +150,112 @@ export function generateHtml(scan: ScanRecord, outputId: string): string {
 <meta charset="utf-8">
 <title>GuardX Report — ${esc(scan.id ?? outputId)}</title>
 <style>
-  body{font-family:system-ui,sans-serif;max-width:900px;margin:40px auto;padding:0 24px;color:#111;line-height:1.5}
-  h1{border-bottom:2px solid #111;padding-bottom:8px;margin-bottom:20px}
-  h2{margin-top:32px;border-bottom:1px solid #e5e7eb;padding-bottom:4px}
-  .badge{display:inline-block;padding:3px 12px;border-radius:12px;font-weight:700;color:#fff;font-size:0.9em}
-  .meta{display:flex;gap:32px;flex-wrap:wrap;margin-bottom:12px}
-  .meta span{font-size:0.9em}
-  code{background:#e5e7eb;padding:1px 5px;border-radius:3px;font-size:0.88em}
-  footer{margin-top:48px;padding-top:12px;border-top:1px solid #e5e7eb;font-size:0.78em;color:#9ca3af}
+  :root{color-scheme:light;--bg:#f3f7fb;--panel:#ffffff;--panel-alt:#f8fafc;--ink:#0f172a;--muted:#475569;--line:#dbe5f0;--hero:#081120;--hero-2:#12233d;--accent:#22d3ee}
+  *{box-sizing:border-box}
+  body{font-family:Inter,Segoe UI,system-ui,sans-serif;background:radial-gradient(circle at top,#e0f2fe 0,#f3f7fb 22%,#eef4fa 100%);max-width:980px;margin:28px auto;padding:0 20px;color:var(--ink);line-height:1.55}
+  h1,h2,h3,p{margin:0}
+  .shell{background:var(--panel);border:1px solid var(--line);border-radius:28px;overflow:hidden;box-shadow:0 28px 80px rgba(15,23,42,0.10)}
+  .hero{padding:28px 30px 24px;background:linear-gradient(135deg,var(--hero) 0%,var(--hero-2) 62%,#153b5b 100%);color:#e2e8f0;position:relative}
+  .hero:after{content:"";position:absolute;inset:auto -60px -60px auto;width:220px;height:220px;background:radial-gradient(circle,rgba(34,211,238,0.24),rgba(34,211,238,0));pointer-events:none}
+  .eyebrow{letter-spacing:.14em;text-transform:uppercase;font-size:12px;font-weight:700;color:#67e8f9}
+  .hero h1{margin-top:8px;font-size:40px;line-height:1.08;letter-spacing:-0.04em}
+  .hero-sub{margin-top:10px;max-width:700px;color:#cbd5e1;font-size:15px}
+  .meta-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:22px}
+  .meta-card{background:rgba(255,255,255,0.06);border:1px solid rgba(148,163,184,0.22);border-radius:16px;padding:14px 16px}
+  .meta-label{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#93c5fd;margin-bottom:6px}
+  .meta-value{font-size:14px;color:#f8fafc;word-break:break-word}
+  code{background:rgba(255,255,255,0.10);padding:2px 7px;border-radius:999px;font-size:12px;color:#e2e8f0}
+  .content{padding:26px 30px 30px}
+  .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:22px}
+  .stat-card{background:var(--panel-alt);border:1px solid var(--line);border-radius:18px;padding:14px 16px}
+  .stat-label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin-bottom:8px}
+  .stat-value{font-size:22px;font-weight:800;letter-spacing:-0.03em}
+  .summary{padding:16px 18px;background:linear-gradient(180deg,#f8fbff,#f2f7fc);border:1px solid var(--line);border-radius:18px;color:#334155;margin-bottom:26px}
+  h2{font-size:28px;letter-spacing:-0.03em;margin-top:28px;margin-bottom:14px}
+  .section-intro{color:#64748b;font-size:14px;margin-bottom:14px}
+  .finding{border:1px solid var(--line);border-left:6px solid var(--accent);border-radius:20px;padding:16px 18px;background:linear-gradient(180deg,#ffffff,#f8fafc);margin:14px 0;box-shadow:0 10px 24px rgba(15,23,42,0.04)}
+  .finding-title{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:21px;letter-spacing:-0.02em}
+  .severity-label{display:inline-flex;align-items:center;padding:4px 9px;border-radius:999px;background:color-mix(in srgb,var(--accent) 14%, white);color:var(--accent);font-size:11px;font-weight:800;letter-spacing:.08em}
+  .finding-meta{margin-top:6px;color:#64748b;font-size:13px;text-transform:none}
+  .finding-block{margin-top:14px;padding:14px;border-radius:14px;background:#eef4fb;border:1px solid #d8e3ef}
+  .block-label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin-bottom:8px}
+  pre{margin:0;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px;white-space:pre-wrap;word-break:break-word;color:#0f172a}
+  .finding-evidence{margin-top:12px;color:#334155;font-size:14px}
+  .finding-evidence span{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin-bottom:4px}
+  .panel{background:var(--panel-alt);border:1px solid var(--line);border-radius:20px;padding:18px}
+  .panel p + p{margin-top:12px}
+  .chip-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .chip{display:inline-flex;align-items:center;padding:7px 11px;border-radius:999px;background:#e8f1fb;border:1px solid #d6e4f2;color:#1e3a5f;font-size:12px;font-weight:600}
+  .chip-risk{background:#fff1f2;border-color:#fecdd3;color:#9f1239}
+  .chip-clean{background:#ecfdf5;border-color:#bbf7d0;color:#166534}
+  ol.recs{list-style:none;padding:0;margin:0;display:grid;gap:10px}
+  ol.recs li{display:grid;grid-template-columns:32px 1fr;gap:12px;align-items:flex-start;padding:12px 14px;background:#fff;border:1px solid var(--line);border-radius:16px}
+  .rec-index{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:999px;background:#dbeafe;color:#1d4ed8;font-size:13px;font-weight:800}
+  .stats-line{display:flex;gap:18px;flex-wrap:wrap;color:#334155;font-size:14px}
+  .stats-line strong{color:#0f172a}
+  footer{margin-top:26px;padding-top:16px;border-top:1px solid var(--line);font-size:12px;color:#94a3b8}
+  @media (max-width: 820px){.meta-grid,.stats{grid-template-columns:1fr 1fr}}
+  @media (max-width: 560px){body{padding:0 12px}.hero,.content{padding-left:18px;padding-right:18px}.meta-grid,.stats{grid-template-columns:1fr}.hero h1{font-size:32px}.finding-title{font-size:18px}}
 </style>
 </head>
 <body>
-<h1>GuardX Security Report</h1>
-<div class="meta">
-  <span><strong>Scan ID:</strong> <code>${esc(scan.id ?? outputId)}</code></span>
-  <span><strong>Date:</strong> ${esc(scan.scannedAt ?? "")}</span>
-  <span><strong>Prompt hash:</strong> <code>${esc(scan.promptHash ?? "")}</code></span>
+<div class="shell">
+  <section class="hero">
+    <div class="eyebrow">GuardX Security Report</div>
+    <h1>${esc(scan.id ?? outputId)}</h1>
+    <p class="hero-sub">AI system prompt vulnerability assessment with severity-rated findings, defensive posture analysis, and remediation guidance.</p>
+    <div class="meta-grid">
+      <div class="meta-card">
+        <span class="meta-label">Scan date</span>
+        <div class="meta-value">${esc(scan.scannedAt ?? "")}</div>
+      </div>
+      <div class="meta-card">
+        <span class="meta-label">Prompt hash</span>
+        <div class="meta-value"><code>${esc(scan.promptHash ?? "")}</code></div>
+      </div>
+      <div class="meta-card">
+        <span class="meta-label">Generated</span>
+        <div class="meta-value">GuardX report export</div>
+      </div>
+    </div>
+  </section>
+  <section class="content">
+    <div class="stats">
+${stats}
+    </div>
+    ${scan.summary ? `<div class="summary">${esc(scan.summary)}</div>` : ""}
+
+    <h2>Findings</h2>
+    <p class="section-intro">Highest-severity issues are shown first so teams can triage extraction and injection risk quickly.</p>
+    ${sorted.length ? findingsHtml : "<p style='color:#6b7280'>No findings.</p>"}
+
+    <h2>Defense Profile</h2>
+    ${
+      dp
+        ? `<div class="panel">
+      <p><strong>Defense level:</strong> ${esc(String(dp.level ?? ""))}</p>
+      ${guardrails.length ? `<p><strong>Guardrails detected</strong></p><div class="chip-row">${guardrailBadges}</div>` : ""}
+      ${weaknesses.length ? `<p><strong>Exploitable weaknesses</strong></p><div class="chip-row">${weaknessBadges}</div>` : ""}
+      ${cleanProbeBadges ? `<p><strong>Clean probe categories</strong></p><div class="chip-row">${cleanProbeBadges}</div>` : ""}
+    </div>`
+        : "<p style='color:#6b7280'>No defense profile available.</p>"
+    }
+
+    <h2>Recommendations</h2>
+    ${recs ? `<ol class="recs">${recs}</ol>` : "<p style='color:#6b7280'>None.</p>"}
+
+    <h2>Scan Stats</h2>
+    <div class="panel">
+      <div class="stats-line">
+        <span><strong>Turns:</strong> ${scan.turnsUsed ?? "?"}</span>
+        <span><strong>Tokens:</strong> ${scan.tokensUsed?.toLocaleString() ?? "?"}</span>
+        <span><strong>Duration:</strong> ${scan.duration != null ? `${(scan.duration / 1000).toFixed(1)}s` : "?"}</span>
+      </div>
+    </div>
+
+    <footer>Generated by GuardX on ${new Date().toISOString()}</footer>
+  </section>
 </div>
-<div class="meta">
-  <span><strong>Vulnerability:</strong> <span class="badge" style="background:${vulnColor}">${esc((scan.overallVulnerability ?? "unknown").toUpperCase())}</span></span>
-  <span><strong>Leak status:</strong> ${esc(scan.leakStatus ?? "unknown")}</span>
-  <span><strong>Findings:</strong> ${findings.length}</span>
-</div>
-${scan.summary ? `<p style="font-style:italic;color:#374151">${esc(scan.summary)}</p>` : ""}
-
-<h2>Findings (${findings.length})</h2>
-${sorted.length ? findingsHtml : "<p style='color:#6b7280'>No findings.</p>"}
-
-<h2>Defense Profile</h2>
-${
-  dp
-    ? `<p>Defense level: <strong>${esc(String(dp.level ?? ""))}</strong></p>
-${guardrails.length ? `<p><strong>Guardrails detected:</strong> ${guardrails.map(esc).join(", ")}</p>` : ""}
-${weaknesses.length ? `<p><strong>Exploitable weaknesses:</strong> ${weaknesses.map(esc).join(", ")}</p>` : ""}`
-    : "<p style='color:#6b7280'>No defense profile available.</p>"
-}
-
-<h2>Recommendations</h2>
-${recs ? `<ol style="padding-left:20px">${recs}</ol>` : "<p style='color:#6b7280'>None.</p>"}
-
-<h2>Scan Stats</h2>
-<p>
-  Turns: ${scan.turnsUsed ?? "?"} &nbsp;|&nbsp;
-  Tokens: ${scan.tokensUsed?.toLocaleString() ?? "?"} &nbsp;|&nbsp;
-  Duration: ${scan.duration != null ? `${(scan.duration / 1000).toFixed(1)}s` : "?"}
-</p>
-
-<footer>Generated by GuardX on ${new Date().toISOString()}</footer>
 </body>
 </html>`;
 
