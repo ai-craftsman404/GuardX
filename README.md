@@ -211,7 +211,7 @@ GuardX/
 | **Phase 5** | Extended probes, MCP security, scheduler, PDF reports, agentic compliance |
 | **Phase 6** | Promptware kill chain, supply chain scan, RAG security, agent escalation, multimodal injection |
 | **Phase 7** | Native scan engine (ZeroLeaks removed), MCP deep audit, extended encoding probes |
-| **Phase 8** (current) | Data poisoning detection, agent chain security, cross-provider consistency, audit export, trend dashboard, jailbreak feed |
+| **Phase 8** ✅ | Data poisoning detection, agent chain security, cross-provider consistency, audit export, trend dashboard, jailbreak feed — **965 unit tests** |
 
 ---
 
