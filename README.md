@@ -27,6 +27,18 @@ Building AI applications means writing system prompts — but system prompts are
 
 ---
 
+## Goal-Driven Multi-Agent Security
+
+<div align="center">
+<img src="docs/images/goal-driven-multi-agent-security.png" alt="GuardX concept image showing goal-driven multi-agent security assessment across prompt injection, agent chain, MCP audit, and red team paths" width="92%"/>
+</div>
+
+GuardX was conceived as a goal-driven multi-agent security assessment system: not just a single scanner, but a coordinated set of specialist security lenses working toward one objective — expose how an AI system can be redirected, extracted, chained, or abused before it reaches production.
+
+In practice, that means combining prompt injection testing, agent-chain analysis, MCP auditing, and red-team style adversarial probing into one security workflow. The value is not just broader coverage, but more realistic assessment of how modern agentic systems fail across connected surfaces.
+
+---
+
 ## Quick Start
 
 ### 1. Prerequisites
