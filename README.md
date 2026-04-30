@@ -74,6 +74,12 @@ GuardX runs directly inside Claude Code, scans prompts with extraction and injec
 <img src="docs/images/readme-report-sample.png" alt="GuardX sample HTML security report with severity-rated findings, defense profile, recommendations, and scan stats" width="92%"/>
 </div>
 
+<div align="center">
+<img src="docs/images/readme-report-pdf-sample.png" alt="GuardX sample PDF security report preview rendered in a document viewer" width="92%"/>
+</div>
+
+Exports: **HTML** · **PDF** · **SARIF** · **JUnit XML**
+
 This sample uses a deliberately vulnerable prompt from [`docs/examples/sample-vulnerable-system-prompt.md`](docs/examples/sample-vulnerable-system-prompt.md) and a synthetic report source in [`docs/examples/readme-report-source.json`](docs/examples/readme-report-source.json). Generated artifacts are included as [HTML](docs/examples/reports/readme-report-sample.html), [PDF](docs/examples/reports/readme-report-sample.pdf), [SARIF](docs/examples/reports/readme-report-sample.sarif), and [JUnit XML](docs/examples/reports/readme-report-sample.xml).
 
 ---
