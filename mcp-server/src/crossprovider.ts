@@ -1,56 +1,160 @@
-export interface ProviderResponse {
-  response: string;
-  isSafe: boolean;
+import { runSecurityScan } from "./scanner.js";
+import type { ScanResult, ScanFinding } from "./scanner.js";
+
+export interface ProviderDivergence {
+  technique: string;
+  providers: Record<string, "critical" | "high" | "medium" | "low">;
+  severityGap: number;
 }
 
-export interface ProviderInconsistency {
-  providers: string[];
-  divergence: string;
-  severity: "critical" | "high" | "medium" | "low";
-}
-
-export interface CrossProviderReport {
-  isConsistent: boolean;
-  riskLevel: string;
-  inconsistencies: ProviderInconsistency[];
+export interface CrossProviderResult {
+  providerResults: Record<string, ScanResult>;
+  divergences: ProviderDivergence[];
+  consensusFindings: ScanFinding[];
+  blindSpots: Record<string, string[]>;
   summary: string;
 }
 
-export function testCrossProviderConsistency(responses: Record<string, ProviderResponse>): CrossProviderReport {
-  const providers = Object.keys(responses);
-  const inconsistencies: ProviderInconsistency[] = [];
+const DEFAULT_PROVIDERS = [
+  "anthropic/claude-haiku-4-5-20251001",
+  "openai/gpt-4o-mini",
+  "google/gemini-flash-1.5",
+];
 
-  // Check for divergence in safety assessment
-  const safeProviders = providers.filter((p) => responses[p].isSafe);
-  const unsafeProviders = providers.filter((p) => !responses[p].isSafe);
+const severityLevel = { critical: 3, high: 2, medium: 1, low: 0 };
 
-  if (safeProviders.length > 0 && unsafeProviders.length > 0) {
-    inconsistencies.push({
-      providers: providers,
-      divergence: `Providers disagree on safety: ${safeProviders.join(", ")} accept, ${unsafeProviders.join(", ")} reject`,
-      severity: "critical",
-    });
+export async function runCrossProviderScan(
+  systemPrompt: string,
+  providers?: string[],
+  categories?: string[]
+): Promise<CrossProviderResult> {
+  const providersToScan = providers && providers.length > 0 ? providers : DEFAULT_PROVIDERS;
+
+  const providerResults: Record<string, ScanResult> = {};
+  const allFindings: Record<string, ScanFinding[]> = {};
+
+  // Run scans for each provider
+  for (const provider of providersToScan) {
+    try {
+      const result = await runSecurityScan(systemPrompt, {
+        targetModel: provider,
+        categories,
+      });
+      providerResults[provider] = result;
+      allFindings[provider] = result.findings;
+    } catch (err) {
+      // Provider failed, record empty results
+      providerResults[provider] = {
+        findings: [],
+        vulnerability: "secure",
+        leakStatus: "none",
+        recommendations: [],
+        defenseProfiles: [],
+        totalTokens: 0,
+      };
+      allFindings[provider] = [];
+    }
   }
 
-  // Check for response contradictions
-  const responses_list = providers.map((p) => responses[p].response.toLowerCase());
-  const hasAccept = responses_list.some((r) => /accept|proceed|execute|help|yes|sure/.test(r));
-  const hasReject = responses_list.some((r) => /cannot|refuse|decline|reject|no|sorry/.test(r));
+  // Find divergences (severity gaps ≥2)
+  const divergenceMap = new Map<string, Map<string, "critical" | "high" | "medium" | "low">>();
 
-  if (hasAccept && hasReject) {
-    inconsistencies.push({
-      providers: providers,
-      divergence: "Responses contradict: some accept while others reject",
-      severity: "high",
-    });
+  for (const [provider, findings] of Object.entries(allFindings)) {
+    for (const finding of findings) {
+      const key = `${finding.technique}::${finding.category}`;
+      if (!divergenceMap.has(key)) {
+        divergenceMap.set(key, new Map());
+      }
+      divergenceMap.get(key)!.set(provider, finding.severity);
+    }
   }
 
-  const isConsistent = inconsistencies.length === 0;
-  const riskLevel = inconsistencies.length === 0 ? "low" : inconsistencies.some((i) => i.severity === "critical") ? "critical" : "high";
+  const divergences: ProviderDivergence[] = [];
+  for (const [key, providerSeverities] of divergenceMap) {
+    if (providerSeverities.size > 1) {
+      const severities = Array.from(providerSeverities.values());
+      const maxSeverity = Math.max(
+        ...severities.map((s) => severityLevel[s])
+      );
+      const minSeverity = Math.min(
+        ...severities.map((s) => severityLevel[s])
+      );
+      const gap = maxSeverity - minSeverity;
 
-  const summary = isConsistent
-    ? `Cross-provider consistency: CONSISTENT across ${providers.length} providers`
-    : `Cross-provider consistency: INCONSISTENT - ${inconsistencies.length} divergence(s) detected at ${riskLevel} severity`;
+      if (gap >= 2) {
+        const [technique, category] = key.split("::");
+        divergences.push({
+          technique,
+          providers: Object.fromEntries(providerSeverities),
+          severityGap: gap,
+        });
+      }
+    }
+  }
 
-  return { isConsistent, riskLevel, inconsistencies, summary };
+  // Find consensus findings (appear in all providers)
+  const consensusFindings: ScanFinding[] = [];
+  if (providersToScan.length > 0) {
+    const techniqueCountByProvider = new Map<string, number>();
+
+    for (const findings of Object.values(allFindings)) {
+      const uniqueTechniques = new Set(findings.map((f) => f.technique));
+      for (const tech of uniqueTechniques) {
+        techniqueCountByProvider.set(
+          tech,
+          (techniqueCountByProvider.get(tech) || 0) + 1
+        );
+      }
+    }
+
+    // Consensus = appears in all providers
+    for (const [provider, findings] of Object.entries(allFindings)) {
+      for (const finding of findings) {
+        if (
+          techniqueCountByProvider.get(finding.technique) ===
+          providersToScan.length
+        ) {
+          if (!consensusFindings.some((f) => f.technique === finding.technique)) {
+            consensusFindings.push(finding);
+          }
+        }
+      }
+    }
+  }
+
+  // Find blind spots (categories missed by some providers)
+  const blindSpots: Record<string, string[]> = {};
+  const allCategories = new Set<string>();
+  for (const findings of Object.values(allFindings)) {
+    for (const finding of findings) {
+      allCategories.add(finding.category);
+    }
+  }
+
+  for (const provider of providersToScan) {
+    const providerCategories = new Set(
+      allFindings[provider].map((f) => f.category)
+    );
+    const missed = Array.from(allCategories).filter(
+      (cat) => !providerCategories.has(cat)
+    );
+    if (missed.length > 0) {
+      blindSpots[provider] = missed;
+    }
+  }
+
+  // Generate summary
+  const summary =
+    `Cross-provider scan: ${providersToScan.length} providers analyzed. ` +
+    `${divergences.length} divergences found, ` +
+    `${consensusFindings.length} consensus findings. ` +
+    `Risk: ${divergences.length > 0 ? "HIGH" : "LOW"}`;
+
+  return {
+    providerResults,
+    divergences,
+    consensusFindings,
+    blindSpots,
+    summary,
+  };
 }

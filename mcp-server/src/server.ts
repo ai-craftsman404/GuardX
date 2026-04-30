@@ -25,10 +25,10 @@ import { scanSupplyChain } from "./supplychain.js";
 import { simulatePromptwareKillchain } from "./promptware.js";
 import { testDataPoisoning } from "./poisoning.js";
 import { testAgentChain } from "./agentchain.js";
-import { testCrossProviderConsistency } from "./crossprovider.js";
+import { runCrossProviderScan } from "./crossprovider.js";
 import { generateAuditReport } from "./audit-report.js";
 import { generateTrendDashboard } from "./dashboard.js";
-import { trackJailbreakFeed } from "./jailbreakfeed.js";
+import { syncJailbreakFeed } from "./jailbreakfeed.js";
 
 function getApiKey(): string {
   const key = process.env.OPENROUTER_API_KEY;
@@ -1603,14 +1603,17 @@ export async function handleToolCall(
   }
 
   if (name === "test_cross_provider_consistency") {
-    if (!args?.responses || typeof args.responses !== "object") {
+    if (!args?.systemPrompt || typeof args.systemPrompt !== "string") {
       return {
-        content: [{ type: "text", text: JSON.stringify({ error: "Missing required parameter: responses object" }) }],
+        content: [{ type: "text", text: JSON.stringify({ error: "Missing required parameter: systemPrompt" }) }],
         isError: true,
       };
     }
     try {
-      const result = testCrossProviderConsistency(args.responses as Record<string, { response: string; isSafe: boolean }>);
+      const systemPrompt = args.systemPrompt as string;
+      const providers = args?.providers as string[] | undefined;
+      const categories = args?.categories as string[] | undefined;
+      const result = await runCrossProviderScan(systemPrompt, providers, categories);
       return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -1624,7 +1627,14 @@ export async function handleToolCall(
   if (name === "generate_audit_report") {
     try {
       const format = (args?.format as string) || "json";
-      const result = generateAuditReport([], format as "json" | "csv" | "pdf");
+      const framework = (args?.framework as string) || "soc2";
+      const organizationName = args?.organizationName as string | undefined;
+      const result = await generateAuditReport(
+        [],
+        framework as "soc2" | "iso27001" | "nist-ai-rmf" | "all",
+        format as "json" | "html" | "csv",
+        organizationName
+      );
       return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -1650,7 +1660,7 @@ export async function handleToolCall(
 
   if (name === "track_jailbreak_feed") {
     try {
-      const result = trackJailbreakFeed();
+      const result = await syncJailbreakFeed();
       return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
