@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/images/hero-banner.svg" alt="GuardX — LLM Security Scanner" width="100%"/>
+<img src="docs/images/17763508209f02.png" alt="GuardX — LLM Security Scanner" width="760"/>
 
 # GuardX
 
